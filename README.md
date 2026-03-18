@@ -4,6 +4,12 @@
 
 \---
 
+
+
+## Lingua
+
+Il progetto verrà sviluppato in italiano e poi tradotto appena raggiunto
+
 ## Indice
 
 * [Panoramica](#panoramica)
@@ -55,7 +61,7 @@ L'obiettivo non è "fare come Visual Studio" — è offrire **lo stesso livello 
 * Evidenziazione commenti, stringhe, costanti numeriche
 * Temi di colore configurabili
 
-### AsmSense — IntelliSense per Assembly
+### AsmSense — Paragonabile a IntelliSense di Microsoft per Assembly
 
 * **Autocomplete** per mnemonici x86, registri, simboli del progetto
 * **Parameter hints** per `INVOKE` — mostra la firma completa delle API Win32
@@ -122,16 +128,16 @@ src/
 ├──────────────────────────────────────────────────────────┤
 │  \[main.asm]  \[utils.asm ●]  \[resource.rc]  \[+]           │
 ├──────────────────┬───────────────────────────────────────┤
-│  Project Tree    │   Editor                               │
-│                  │                                        │
-│  ▼ AsmWorkbench  │   1  .386                              │
-│    main.asm      │   2  .model flat, stdcall              │
-│    utils.asm     │   3  option casemap:none               │
-│    resource.rc   │   4                                    │
-│                  │   5  include windows.inc               │
+│  Project Tree    │   Editor                              │
+│                  │                                       │
+│  ▼ AsmWorkbench  │   1  .386                             │
+│    main.asm      │   2  .model flat, stdcall             │
+│    utils.asm     │   3  option casemap:none              │
+│    resource.rc   │   4                                   │
+│                  │   5  include windows.inc              │
 ├──────────────────┴───────────────────────────────────────┤
-│  ▼ Output     ▼ Errori     ▼ Simboli                      │
-│  Build completato — 0 errori, 0 warning                   │
+│  ▼ Output     ▼ Errori     ▼ Simboli                     │
+│  Build completato — 0 errori, 0 warning                  │
 ├──────────────────────────────────────────────────────────┤
 │  Ln 5   Col 12  │  x86  │  INS  │  main.asm              │
 └──────────────────────────────────────────────────────────┘
@@ -218,9 +224,20 @@ Le convenzioni di codice e le linee guida per i contributi saranno pubblicate ne
 
 ## Licenza
 
-Questo progetto sarà rilasciato sotto licenza **MIT** — libero per uso personale e commerciale, con obbligo di attribuzione.
+Questo progetto è distribuito sotto European Union Public Licence v. 1.2 (EUPL-1.2).
 
-La scelta definitiva della licenza verrà confermata prima della prima release pubblica.
+La EUPL 1.2 è una licenza copyleft approvata dalla Commissione Europea, disponibile in tutte le lingue ufficiali dell'UE. In sintesi:
+
+
+
+* Sei libero di usare, studiare, modificare e distribuire il software
+* Se distribuisci versioni modificate, devi farlo sotto la stessa licenza
+* Il codice sorgente deve essere sempre disponibile
+* La legge applicabile è quella italiana (paese del licenziante)
+
+
+
+Testo completo: https://eupl.eu/1.2/it/
 
 \---
 
