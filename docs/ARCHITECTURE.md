@@ -1,7 +1,7 @@
 # AsmWorkbench — Documento di Architettura
 
-> Versione: 1.2  
-> Stato: Progettazione completata — inizio sviluppo  
+> Versione: 1.3  
+> Stato: Sviluppo in corso  
 > Lingua: Italiano (versione inglese prevista)  
 > Licenza: EUPL v1.2
 
@@ -107,51 +107,56 @@ MSG_BOX 0, szMsg, szTitle, MB_OK
 ```
 AsmWorkbench/
 │
+├── AsmWorkbench.asm        ← Entry point, WinMain, include di tutto il progetto
+│
 ├── src/                    ← Sorgenti Assembly
-│   ├── main.asm            ← Entry point, WinMain, message loop
-│   ├── mainwnd.asm         ← Finestra principale + WndProc
-│   ├── tabbar.asm          ← Tab bar custom owner-draw
-│   ├── editor.asm          ← Wrapper RichEdit
-│   ├── syntax.asm          ← Syntax highlighting + validazione token
-│   ├── indentguide.asm     ← Linee guida indentazione            ← NUOVO
-│   ├── search.asm          ← Ricerca file corrente e progetto    ← NUOVO
-│   ├── toolbar.asm         ← Toolbar icone sotto il menu
-│   ├── statusbar.asm       ← Barra di stato
-│   ├── filemgr.asm         ← Gestione file (open/save/dialogs)
-│   ├── project.asm         ← Gestione progetto .awb
-│   ├── panelmgr.asm        ← Layout pannelli ridimensionabili
-│   ├── config.asm          ← Configurazione (file INI)
-│   ├── theme.asm           ← Sistema temi e colori
-│   ├── updater.asm         ← Notifica aggiornamenti disponibili  ← NUOVO
-│   ├── symtable.asm        ← Parser e database simboli (AsmSense)
-│   ├── asmsense.asm        ← UI autocomplete e parameter hints
-│   ├── reseditor.asm       ← Resource editor visuale
-│   └── macros.inc          ← Macro Win32 condivise
+│   ├── WinMain.asm         ← Corpo principale, message loop, gestione errori
+│   ├── MainWndProc.asm     ← WndProc — gestione messaggi finestra principale
+│   ├── RegisterWindowMainClass.asm ← Registrazione classe finestra
+│   ├── InitIde.asm         ← Creazione e init di tutti i componenti (WM_CREATE)
+│   ├── DeInitIde.asm       ← Pulizia risorse (WM_DESTROY)          [futuro]
+│   ├── TabBar.asm          ← Tab bar custom owner-draw              [futuro]
+│   ├── Editor.asm          ← Wrapper RichEdit                       [futuro]
+│   ├── Syntax.asm          ← Syntax highlighting + validazione      [futuro]
+│   ├── IndentGuide.asm     ← Linee guida indentazione blocchi       [futuro]
+│   ├── Search.asm          ← Ricerca file corrente e progetto       [futuro]
+│   ├── Toolbar.asm         ← Toolbar icone sotto il menu            [futuro]
+│   ├── StatusBar.asm       ← Gestione barra di stato                [futuro]
+│   ├── FileMgr.asm         ← Gestione file (open/save/dialogs)      [futuro]
+│   ├── Project.asm         ← Gestione progetto .awb                 [futuro]
+│   ├── PanelMgr.asm        ← Layout pannelli ridimensionabili       [futuro]
+│   ├── Config.asm          ← Configurazione (file INI)              [futuro]
+│   ├── Theme.asm           ← Sistema temi e colori                  [futuro]
+│   ├── Updater.asm         ← Notifica aggiornamenti disponibili     [futuro]
+│   ├── SymTable.asm        ← Parser e database simboli (AsmSense)   [futuro]
+│   ├── AsmSense.asm        ← UI autocomplete e parameter hints      [futuro]
+│   └── ResEditor.asm       ← Resource editor visuale                [futuro]
 │
 ├── inc/                    ← File include condivisi
+│   ├── CommonHeader.inc    ← Include Windows.inc e altri header
+│   ├── CommonLib.inc       ← Includelib per le librerie di sistema
+│   ├── Proto.inc           ← Prototipi di tutte le funzioni
+│   ├── constants.inc       ← Costanti, stringhe, ID controlli
 │   ├── globals.inc         ← Variabili globali condivise tra moduli
-│   ├── structs.inc         ← Strutture dati custom
-│   ├── constants.inc       ← ID menu, controlli, costanti IDE
-│   ├── theme.inc           ← Strutture e costanti temi
-│   └── apidb.inc           ← Database Win32 API (AsmSense)
+│   ├── structs.inc         ← Strutture dati custom (DOCUMENT, PROJECT...)
+│   ├── theme.inc           ← Struttura THEME e costanti temi        [futuro]
+│   └── apidb.inc           ← Database Win32 API per AsmSense        [futuro]
 │
 ├── res/                    ← Risorse Windows
-│   ├── resource.rc         ← Menu, dialogs, stringhe, icone
-│   ├── toolbar.bmp         ← Bitmap pulsanti toolbar
 │   └── icons/              ← File icone .ico
 │
-├── build/                  ← Output compilazione (non versionato)
-│   ├── AsmWorkbench.exe
-│   └── AsmWorkbench.res
+├── doc/                    ← Documentazione tecnica
+│   └── ARCHITECTURE.md     ← Questo file
 │
-├── docs/                   ← Documentazione tecnica
-│   ├── ARCHITECTURE.md     ← Questo file
-│   └── CONVENTIONS.md      ← Convenzioni di codice (futuro)
-│
-├── make.bat                ← Script di build
-├── README.md               ← Presentazione del progetto
-└── LICENSE                 ← Testo EUPL v1.2
+├── make.bat                ← Script di build (ml + link)
+├── AsmWorkbench.exe        ← Eseguibile compilato (non versionato)
+├── AsmWorkbench.obj        ← File oggetto (non versionato)
+├── README.md               ← Presentazione del progetto (italiano)
+├── ReadMe_Eng.md           ← Presentazione del progetto (inglese)
+└── LICENSE EUPL-1.2.txt    ← Testo EUPL v1.2
 ```
+
+> **Nota sul .gitignore**: i file `*.exe` e `*.obj` dovrebbero essere esclusi dal versionamento. Aggiungere al `.gitignore`: `*.exe`, `*.obj`, `*.res`.
 
 ---
 
@@ -927,24 +932,24 @@ NomeModulo_NomeProcedura endp
 
 | Step | Modulo | Obiettivo | Stato |
 |:----:|--------|-----------|:-----:|
-| 1 | `main.asm` + `mainwnd.asm` | Finestra principale con menu base | ⬜ |
-| 2 | `tabbar.asm` | Tab bar custom owner-draw con ● e × | ⬜ |
-| 3 | `editor.asm` | RichEdit 4.1 embedded con gestione resize | ⬜ |
-| 4 | `filemgr.asm` | New / Open / Save / Save As / Save All | ⬜ |
-| 5 | `statusbar.asm` | Riga, colonna, flag modificato | ⬜ |
-| 6 | `theme.asm` + `theme.inc` | Sistema temi Light / Dark / Custom | ⬜ |
-| 7 | `syntax.asm` | Highlighting + sottolineatura ondulata | ⬜ |
-| 8 | `indentguide.asm` | Linee guida indentazione blocchi | ⬜ |
-| 9 | `toolbar.asm` | Toolbar icone con azioni principali | ⬜ |
-| 10 | `search.asm` | Ricerca e sostituzione file/progetto | ⬜ |
-| 11 | `project.asm` | Progetto `.awb` e project tree | ⬜ |
-| 12 | `panelmgr.asm` | Pannelli Output / Errori / Simboli / Ricerca | ⬜ |
-| 13 | `updater.asm` | Notifica aggiornamenti disponibili | ⬜ |
+| 1 | `AsmWorkbench.asm` + `WinMain.asm` + `RegisterWindowMainClass.asm` | Finestra principale con menu base | ✅ |
+| 2 | `InitIde.asm` + `StatusBar` | StatusBar con sezioni e testo | ✅ |
+| 3 | `TabBar.asm` | Tab bar custom owner-draw con ● e × | ⬜ |
+| 4 | `Editor.asm` | RichEdit 4.1 embedded con gestione resize | ⬜ |
+| 5 | `FileMgr.asm` | New / Open / Save / Save As / Save All | ⬜ |
+| 6 | `Theme.asm` + `theme.inc` | Sistema temi Light / Dark / Custom | ⬜ |
+| 7 | `Syntax.asm` | Highlighting + sottolineatura ondulata | ⬜ |
+| 8 | `IndentGuide.asm` | Linee guida indentazione blocchi | ⬜ |
+| 9 | `Toolbar.asm` | Toolbar icone con azioni principali | ⬜ |
+| 10 | `Search.asm` | Ricerca e sostituzione file/progetto | ⬜ |
+| 11 | `Project.asm` | Progetto `.awb` e project tree | ⬜ |
+| 12 | `PanelMgr.asm` | Pannelli Output / Errori / Simboli / Ricerca | ⬜ |
+| 13 | `Updater.asm` | Notifica aggiornamenti disponibili | ⬜ |
 | 14 | Build | Integrazione assembler esterno | ⬜ |
-| 15 | `symtable.asm` | Parser simboli del progetto | ⬜ |
-| 16 | `asmsense.asm` | Autocomplete + Parameter Hints | ⬜ |
+| 15 | `SymTable.asm` | Parser simboli del progetto | ⬜ |
+| 16 | `AsmSense.asm` | Autocomplete + Parameter Hints | ⬜ |
 | 17 | Symbol Navigator | Pannello simboli con navigazione | ⬜ |
-| 18 | `reseditor.asm` | Resource editor visuale | ⬜ |
+| 18 | `ResEditor.asm` | Resource editor visuale | ⬜ |
 | 19 | Debugger | Integrazione debugger step-by-step | ⬜ |
 
 Legenda: ⬜ Da fare · 🔄 In corso · ✅ Completato
@@ -974,4 +979,4 @@ Testo completo: [https://eupl.eu/1.2/it/](https://eupl.eu/1.2/it/)
 
 ---
 
-*Documento aggiornato: 2026 — AsmWorkbench è in sviluppo attivo*
+*Documento aggiornato: 2026 — AsmWorkbench è in sviluppo attivo — Step 1-2 completati*
