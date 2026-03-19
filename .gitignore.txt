@@ -1,0 +1,17 @@
+# File oggetto (generati durante la compilazione)
+*.obj
+
+# File di listing e mappe (generati dal linker/assembler)
+*.lst
+*.map
+
+# File di backup di editor (come quelli creati da Notepad++ o RadASM)
+*.bak
+*.tmp
+
+# File specifici di eventuali IDE (es. Visual Studio o RadASM)
+.vs/
+*.pdb
+*.ilk
+*.suo
+*.user
