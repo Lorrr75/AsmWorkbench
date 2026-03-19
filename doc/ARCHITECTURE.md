@@ -1,7 +1,7 @@
 # AsmWorkbench — Documento di Architettura
 
-> Versione: 1.1  
-> Stato: Progettazione iniziale  
+> Versione: 1.2  
+> Stato: Progettazione completata — inizio sviluppo  
 > Lingua: Italiano (versione inglese prevista)  
 > Licenza: EUPL v1.2
 
@@ -18,14 +18,17 @@
 7. [Layout interfaccia utente](#7-layout-interfaccia-utente)
 8. [Architettura della Tab Bar](#8-architettura-della-tab-bar)
 9. [Syntax Highlighting e Validazione](#9-syntax-highlighting-e-validazione)
-10. [AsmSense — Paragonabile a IntelliSense](#10-asmsense--paragonabile-a-intellisense)
-11. [Resource Editor](#11-resource-editor)
-12. [Integrazione Assembler](#12-integrazione-assembler)
-13. [Integrazione Debugger](#13-integrazione-debugger)
-14. [Flusso messaggi Win32](#14-flusso-messaggi-win32)
-15. [Convenzioni di codice](#15-convenzioni-di-codice)
-16. [Roadmap di sviluppo](#16-roadmap-di-sviluppo)
-17. [Autori e partner](#17-autori-e-partner)
+10. [Indent Guides](#10-indent-guides)
+11. [Ricerca nel progetto](#11-ricerca-nel-progetto)
+12. [AsmSense — Paragonabile a IntelliSense](#12-asmsense--paragonabile-a-intellisense)
+13. [Resource Editor](#13-resource-editor)
+14. [Sistema di notifica aggiornamenti](#14-sistema-di-notifica-aggiornamenti)
+15. [Integrazione Assembler](#15-integrazione-assembler)
+16. [Integrazione Debugger](#16-integrazione-debugger)
+17. [Flusso messaggi Win32](#17-flusso-messaggi-win32)
+18. [Convenzioni di codice](#18-convenzioni-di-codice)
+19. [Roadmap di sviluppo](#19-roadmap-di-sviluppo)
+20. [Autori e partner](#20-autori-e-partner)
 
 ---
 
@@ -65,25 +68,27 @@
 | Linguaggio | Assembly x86 (MASM32) |
 | Assembler di sviluppo | MASM32 SDK |
 | GUI | Win32 API native |
-| Editor di testo | RichEdit 4.1 (richiamato via Win32) |
+| Editor di testo | RichEdit 4.1 (`Msftedit.dll`) |
 | Astrazione GUI | Macro MASM condivise (`macros.inc`) |
+| Rete (notifiche) | `wininet.dll` (già presente su Windows) |
 | Build system | Script `make.bat` |
 | Target OS | Windows 7 e superiore |
 | Dipendenze runtime | Solo DLL standard di Windows |
 
 ### Perché RichEdit 4.1 specificamente
 
-RichEdit 4.1 (disponibile da Windows XP in poi tramite `Msftedit.dll`) offre funzionalità fondamentali per AsmWorkbench non presenti nelle versioni precedenti:
+RichEdit 4.1 (disponibile da Windows XP in poi tramite `Msftedit.dll`) offre funzionalità fondamentali non presenti nelle versioni precedenti:
 
-- `CHARFORMAT2` con campo `bUnderlineType` — permette la sottolineatura ondulata (`CFU_UNDERLINEWAVE`) per i token non riconosciuti
-- Colore di sottolineatura personalizzabile tramite `crUnderlineColor`
+- `CHARFORMAT2` con `bUnderlineType` — sottolineatura ondulata (`CFU_UNDERLINEWAVE`) per i token non riconosciuti
+- `crUnderlineColor` — colore della sottolineatura personalizzabile
+- `EM_FINDTEXT` / `EM_FINDTEXTEX` — ricerca testo nativa
 - Supporto Unicode nativo
 
 ### Perché Win32 + macro MASM
 
 La Win32 API pura è verbosa in Assembly. Si usano **macro MASM** che astraggono i pattern ripetitivi mantenendo controllo totale, senza dipendenze esterne.
 
-```nasm
+```asm
 ; Senza macro — verboso
 push MB_OK
 push offset szTitle
@@ -108,13 +113,16 @@ AsmWorkbench/
 │   ├── tabbar.asm          ← Tab bar custom owner-draw
 │   ├── editor.asm          ← Wrapper RichEdit
 │   ├── syntax.asm          ← Syntax highlighting + validazione token
-│   ├── toolbar.asm         ← Toolbar
+│   ├── indentguide.asm     ← Linee guida indentazione            ← NUOVO
+│   ├── search.asm          ← Ricerca file corrente e progetto    ← NUOVO
+│   ├── toolbar.asm         ← Toolbar icone sotto il menu
 │   ├── statusbar.asm       ← Barra di stato
 │   ├── filemgr.asm         ← Gestione file (open/save/dialogs)
 │   ├── project.asm         ← Gestione progetto .awb
 │   ├── panelmgr.asm        ← Layout pannelli ridimensionabili
 │   ├── config.asm          ← Configurazione (file INI)
-│   ├── theme.asm           ← Sistema temi e colori            ← NUOVO
+│   ├── theme.asm           ← Sistema temi e colori
+│   ├── updater.asm         ← Notifica aggiornamenti disponibili  ← NUOVO
 │   ├── symtable.asm        ← Parser e database simboli (AsmSense)
 │   ├── asmsense.asm        ← UI autocomplete e parameter hints
 │   ├── reseditor.asm       ← Resource editor visuale
@@ -124,7 +132,7 @@ AsmWorkbench/
 │   ├── globals.inc         ← Variabili globali condivise tra moduli
 │   ├── structs.inc         ← Strutture dati custom
 │   ├── constants.inc       ← ID menu, controlli, costanti IDE
-│   ├── theme.inc           ← Strutture e costanti temi         ← NUOVO
+│   ├── theme.inc           ← Strutture e costanti temi
 │   └── apidb.inc           ← Database Win32 API (AsmSense)
 │
 ├── res/                    ← Risorse Windows
@@ -154,6 +162,7 @@ AsmWorkbench/
 - Inizializza le classi finestra
 - Avvia il message loop principale
 - Carica configurazione e tema all'avvio
+- Lancia il controllo aggiornamenti in background
 
 ### `mainwnd.asm` — Finestra principale
 - Registra e crea la finestra principale
@@ -161,11 +170,10 @@ AsmWorkbench/
 - Coordina il ridimensionamento dei sottocomponenti
 - Gestisce `WM_CREATE`, `WM_SIZE`, `WM_CLOSE`, `WM_DESTROY`
 
-### `theme.asm` — Sistema temi *(nuovo)*
+### `theme.asm` — Sistema temi
 - Carica il tema attivo dalla configurazione all'avvio
-- Fornisce a tutti i moduli i colori correnti tramite la struttura globale `g_Theme`
+- Fornisce a tutti i moduli i colori correnti tramite `g_Theme`
 - Implementa i due temi predefiniti: **Light** e **Dark**
-- Espone `Theme_Load` e `Theme_Apply` come funzioni centralizzate
 - Gestisce il cambio tema a runtime ridisegnando tutti i componenti
 
 ### `tabbar.asm` — Tab bar custom
@@ -179,26 +187,53 @@ AsmWorkbench/
 ### `editor.asm` — Wrapper RichEdit
 - Crea e gestisce il controllo RichEdit 4.1 (`Msftedit.dll`)
 - Espone funzioni di alto livello: `GetCurrentLine`, `GetCurrentCol`, `GetText`, `SetText`
-- Intercetta `EN_CHANGE` per notificare modifiche a `syntax.asm`
+- Intercetta `EN_CHANGE` per notificare `syntax.asm` e `indentguide.asm`
 - Gestisce il flag `bModified` del documento corrente
-- Imposta i colori di sfondo e testo dal tema attivo
+- Imposta colori di sfondo e testo dal tema attivo
 
 ### `syntax.asm` — Syntax highlighting + validazione
-- **Passaggio 1 — Colorazione**: colora i token riconosciuti usando i colori del tema
+- **Passaggio 1 — Colorazione**: colora i token riconosciuti con i colori del tema
 - **Passaggio 2 — Validazione**: applica sottolineatura ondulata rossa ai token non riconosciuti
 - Usa `CHARFORMAT2` di RichEdit 4.1 per entrambi i passaggi
 - Opera solo sul paragrafo corrente per mantenere la reattività
 
+### `indentguide.asm` — Linee guida indentazione *(nuovo)*
+- Disegna linee verticali tratteggiate sottili che collegano blocchi apertura/chiusura
+- Coppia di blocchi riconosciuti:
+
+| Apertura | Chiusura |
+|---|---|
+| `.IF` | `.ENDIF` |
+| `.WHILE` | `.ENDW` |
+| `.REPEAT` | `.UNTIL` |
+| `STRUCT` | `ENDS` |
+| `MACRO` | `ENDM` |
+| `PROC` | `ENDP` |
+
+- Implementato intercettando `WM_PAINT` del RichEdit e aggiungendo il disegno delle linee in coda, tramite un layer sovrapposto trasparente
+- Colore configurabile nel tema (`clrIndentGuide`), disattivabile dalle impostazioni
+
+### `search.asm` — Ricerca nel progetto *(nuovo)*
+- Dialog floating **non modale** — rimane aperto durante la navigazione
+- Tre modalità operative:
+  - **File corrente** — usa `EM_FINDTEXTEX` nativo di RichEdit
+  - **Progetto completo** — scansiona tutti i file `.asm` del progetto
+  - **Sostituisci** — Replace e Replace All su file corrente o progetto
+- Opzioni: maiuscole/minuscole, parola intera
+- I risultati del progetto appaiono nel pannello inferiore come lista cliccabile — click sulla voce apre il file e salta alla riga
+
 ### `toolbar.asm` — Barra degli strumenti
-- Crea la toolbar con `CreateToolbarEx`
+- Barra icone posizionata sotto il menu, creata con `CreateToolbarEx`
+- Pulsanti previsti: Nuovo, Apri, Salva, Salva tutto, Separatore, Build, Esegui, Stop, Separatore, Cerca, AsmSense ON/OFF
 - Aggiorna lo stato abilitato/disabilitato in base al contesto corrente
 
 ### `statusbar.asm` — Barra di stato
 - Mostra: numero riga, colonna, flag modificato, encoding, modalità (INS/OVR), nome file
+- Mostra notifica aggiornamento disponibile nella sezione destra (discreta, cliccabile)
 - Si aggiorna ad ogni movimento del cursore via `EN_SELCHANGE`
 
 ### `filemgr.asm` — Gestione file
-- Implementa: Nuovo, Apri, Salva, Salva con nome, Chiudi
+- Implementa: Nuovo, Apri, Salva, Salva con nome, Chiudi, Salva tutto
 - Gestisce i dialog standard (`GetOpenFileName`, `GetSaveFileName`)
 - Controlla `bModified` prima di chiudere o sovrascrivere
 
@@ -209,16 +244,26 @@ AsmWorkbench/
 
 ### `panelmgr.asm` — Gestione pannelli
 - Gestisce il layout ridimensionabile con splitter trascinabili
-- Pannelli: Project Tree (sinistra), Editor (centro), Output/Errori/Simboli (basso)
+- Pannelli: Project Tree (sinistra), Editor (centro), Output/Errori/Simboli/Ricerca (basso)
 
 ### `config.asm` — Configurazione
 - Legge e scrive `AsmWorkbench.ini`
-- Gestisce: tema attivo, font, tab size, percorsi, dimensioni finestra
+- Gestisce: tema attivo, font, tab size, indent guides on/off, aggiornamenti on/off, percorsi, dimensioni finestra
+
+### `updater.asm` — Notifica aggiornamenti *(nuovo)*
+- Eseguito in background all'avvio tramite un thread separato
+- Interroga GitHub API: `api.github.com/repos/<owner>/AsmWorkbench/releases/latest`
+- Confronta il tag della release remota con la versione corrente dell'eseguibile
+- Se disponibile una versione più recente: mostra notifica discreta nella statusbar
+- Click sulla notifica: apre il browser sulla pagina release di GitHub
+- Il download e l'installazione restano manuali — l'utente sceglie quando aggiornare
+- Funzionalità disattivabile dalle impostazioni (`CheckUpdates=0` in INI)
+- Usa `wininet.dll` — già presente su Windows, nessuna dipendenza esterna
 
 ### `symtable.asm` — Database simboli (AsmSense)
 - Scansiona i file sorgente del progetto
 - Riconosce: `PROC`, `ENDP`, label, `EQU`, variabili, macro
-- Usato sia da `asmsense.asm` (autocomplete) che da `syntax.asm` (validazione)
+- Usato da `asmsense.asm` (autocomplete) e `syntax.asm` (validazione token)
 
 ### `asmsense.asm` — Autocomplete (AsmSense)
 - Mostra un popup `ListBox` owner-draw sotto il cursore
@@ -234,7 +279,7 @@ AsmWorkbench/
 
 Definite in `inc/structs.inc`:
 
-```nasm
+```asm
 MAX_DOCS    equ 32
 
 ;---------------------------------------------------
@@ -263,6 +308,16 @@ PROJECT struct
     nDocCount    dd  0
     hDocs        dd  MAX_DOCS dup(0)
 PROJECT ends
+
+;---------------------------------------------------
+; Risultato di ricerca nel progetto
+;---------------------------------------------------
+SEARCHRESULT struct
+    szFilePath   db  MAX_PATH dup(0)  ; file contenente la corrispondenza
+    nLine        dd  0                 ; riga (1-based)
+    nCol         dd  0                 ; colonna (1-based)
+    szContext    db  256 dup(0)        ; testo della riga (per anteprima)
+SEARCHRESULT ends
 
 ;---------------------------------------------------
 ; Simbolo nel database AsmSense
@@ -296,11 +351,11 @@ APIENTRY ends
 
 ## 6. Sistema temi e colori
 
-Il sistema temi è il modulo **trasversale** dell'IDE: tutti i moduli che disegnano qualcosa ottengono i propri colori esclusivamente da questo sistema, senza mai usare valori hardcoded. Questo garantisce che un cambio tema sia istantaneo e completo.
+Il sistema temi è il modulo **trasversale** dell'IDE: tutti i moduli che disegnano qualcosa ottengono i propri colori esclusivamente da questo sistema, senza mai usare valori hardcoded.
 
 ### Struttura THEME (in `inc/theme.inc`)
 
-```nasm
+```asm
 ;---------------------------------------------------
 ; Struttura tema colori
 ; Tutti i colori sono valori COLORREF (00BBGGRR)
@@ -328,6 +383,9 @@ THEME struct
 
     ; --- Validazione token ---
     clrSquiggly          dd  0   ; sottolineatura ondulata (default: rosso)
+
+    ; --- Indent guides ---
+    clrIndentGuide       dd  0   ; colore linee guida indentazione
 
     ; --- Tab bar ---
     clrTabActiveBg       dd  0   ; sfondo tab attiva
@@ -360,8 +418,6 @@ THEME_CUSTOM  equ 2
 
 ### Tema Light — valori predefiniti
 
-Ispirato all'interfaccia classica di Windows / Visual Studio Light:
-
 | Elemento | Colore | Note |
 |---|---|---|
 | Sfondo editor | `#FFFFFF` | Bianco |
@@ -373,12 +429,11 @@ Ispirato all'interfaccia classica di Windows / Visual Studio Light:
 | Stringhe | `#A31515` | Rosso mattone |
 | Costanti numeriche | `#098658` | Verde acqua |
 | Squiggly | `#FF0000` | Rosso acceso |
+| Indent guides | `#D0D0D0` | Grigio molto chiaro |
 | Tab attiva sfondo | `#FFFFFF` | |
 | Tab inattiva sfondo | `#ECECEC` | Grigio chiaro |
 
 ### Tema Dark — valori predefiniti
-
-Ottimizzato per ridurre l'affaticamento visivo in sessioni lunghe:
 
 | Elemento | Colore | Note |
 |---|---|---|
@@ -391,40 +446,21 @@ Ottimizzato per ridurre l'affaticamento visivo in sessioni lunghe:
 | Stringhe | `#CE9178` | Arancione salmone |
 | Costanti numeriche | `#B5CEA8` | Verde chiaro |
 | Squiggly | `#F44747` | Rosso brillante |
+| Indent guides | `#404040` | Grigio scuro appena visibile |
 | Tab attiva sfondo | `#1E1E1E` | |
 | Tab inattiva sfondo | `#2D2D2D` | Grigio scuro |
 
 ### Tema Custom
 
-Quando l'utente sceglie *Strumenti → Personalizza tema*, si apre un dialog con un color picker per ogni campo della struttura `THEME`. Il tema custom viene salvato in `AsmWorkbench.ini` nella sezione `[Theme]`.
-
-### Cambio tema a runtime
-
-```
-Utente seleziona nuovo tema
-        │
-        ▼
-Theme_Load(nThemeId)       ; carica valori in g_Theme
-        │
-        ▼
-Editor_ApplyTheme          ; aggiorna colori RichEdit + ri-esegue syntax
-TabBar_Repaint             ; ridisegna tutte le tab
-Toolbar_Repaint            ; ridisegna toolbar
-StatusBar_Repaint          ; ridisegna statusbar
-ProjectTree_Repaint        ; ridisegna project tree
-Panel_Repaint              ; ridisegna pannelli inferiori
-        │
-        ▼
-InvalidateRect(g_hMainWnd) ; forza ridisegno completo
-```
+Dialog accessibile da *Strumenti → Personalizza tema* con color picker per ogni campo. Salvato in `AsmWorkbench.ini` sezione `[Theme]`.
 
 ### Regola fondamentale — mai hardcoded
 
-```nasm
-; ❌ VIETATO — colore hardcoded
+```asm
+; ❌ VIETATO
 mov  eax, 1E1E1Eh
 
-; ✅ CORRETTO — sempre dal tema attivo
+; ✅ CORRETTO
 mov  eax, g_Theme.clrBackground
 ```
 
@@ -436,7 +472,7 @@ mov  eax, g_Theme.clrBackground
 ┌──────────────────────────────────────────────────────────────────┐
 │  File  Modifica  Visualizza  Progetto  Build  Strumenti  Aiuto   │  ← Menu
 ├──────────────────────────────────────────────────────────────────┤
-│  [N][A][S][S+] │ [Build][Esegui][Stop] │ [AsmSense ON/OFF]      │  ← Toolbar
+│  [N][A][S][S+] │ [Build][Esegui][Stop] │ [Cerca] [AsmSense]     │  ← Toolbar
 ├──────────────────────────────────────────────────────────────────┤
 │  [main.asm]  [utils.asm ●]  [resource.rc]  [+]                   │  ← Tab bar
 ├─────────────────────┬────────────────────────────────────────────┤
@@ -447,32 +483,40 @@ mov  eax, g_Theme.clrBackground
 │    ├ main.asm       │   2  .model flat, stdcall                   │
 │    ├ utils.asm      │   3  option casemap:none                    │
 │    └ resource.rc    │   4                                         │
-│                     │   5  include windows.inc                    │
-│                     │   6  mov eax, AEX     ← squiggly su AEX    │
-│                     │                  ~~~                        │
+│                     │   5  .IF eax == 0          ← indent guide  │
+│                     │   6  │  mov ebx, 1                         │
+│                     │   7  │  mov ecx, 2                         │
+│                     │   8  .ENDIF                                 │
+│                     │   9                                         │
+│                     │  10  mov eax, AEX    ← squiggly su AEX     │
+│                     │                 ~~~                         │
 ├─────────────────────┴────────────────────────────────────────────┤
-│  [ ▼ Output ] [ ▼ Errori ] [ ▼ Simboli ]                         │
-│  Compilazione completata — 0 errori, 0 warning                   │
+│ [▼ Output] [▼ Errori] [▼ Simboli] [▼ Ricerca]                    │  ← Pannelli
+│  Trovate 3 corrispondenze per "MyProc" in 2 file                 │
+│  main.asm(12):   call MyProc                                      │
+│  utils.asm(45):  MyProc proc                                      │
 ├──────────────────────────────────────────────────────────────────┤
-│  Ln 6   Col 18  │  ANSI  │  x86  │  INS  │  main.asm            │  ← Statusbar
+│  Ln 10  Col 14  │  ANSI  │  x86  │  INS  │  main.asm  ║ ⬆ v1.1  │  ← Statusbar
 └──────────────────────────────────────────────────────────────────┘
+                                                         ↑
+                                              notifica aggiornamento
 ```
 
-Il menu *Visualizza → Tema* conterrà:
-
+Il menu *Visualizza → Tema*:
 ```
 Visualizza
-  └── Tema
-        ├── ● Light
-        ├──   Dark
-        └──   Personalizza...
+  ├── Tema
+  │     ├── ● Light
+  │     ├──   Dark
+  │     └──   Personalizza...
+  └── Indent Guides  ✓
 ```
 
 ---
 
 ## 8. Architettura della Tab Bar
 
-Implementata come controllo **owner-draw custom** senza usare `WC_TABCONTROL`. Tutti i colori vengono da `g_Theme`.
+Implementata come controllo **owner-draw custom**. Tutti i colori vengono da `g_Theme`.
 
 ### Anatomia di una tab
 
@@ -480,7 +524,6 @@ Implementata come controllo **owner-draw custom** senza usare `WC_TABCONTROL`. T
 ┌─────────────────────────────┐
 │  📄  utils.asm   ●   ×     │  ← tab attiva, file modificato
 └─────────────────────────────┘
-
 ┌─────────────────────────────┐
 │  📄  main.asm        ×     │  ← tab inattiva, file pulito
 └─────────────────────────────┘
@@ -517,11 +560,9 @@ Implementata come controllo **owner-draw custom** senza usare `WC_TABCONTROL`. T
 
 ## 9. Syntax Highlighting e Validazione
 
-`syntax.asm` esegue **due passaggi distinti** ad ogni modifica del testo (`EN_CHANGE`), operando solo sul paragrafo corrente per mantenere la reattività anche su file lunghi.
+`syntax.asm` esegue **due passaggi distinti** ad ogni `EN_CHANGE`, operando solo sul paragrafo corrente per mantenere la reattività.
 
 ### Passaggio 1 — Colorazione
-
-Per ogni token riconosciuto, applica il colore corrispondente dal tema attivo tramite `EM_SETCHARFORMAT` con struttura `CHARFORMAT2`.
 
 | Categoria | Esempi |
 |---|---|
@@ -537,26 +578,17 @@ Per ogni token riconosciuto, applica il colore corrispondente dal tema attivo tr
 
 ### Passaggio 2 — Validazione (sottolineatura ondulata)
 
-Per ogni token che non appartiene ad alcuna categoria riconosciuta e non è presente in `symtable`, viene applicata la sottolineatura ondulata tramite `CHARFORMAT2` di RichEdit 4.1:
-
-```nasm
+```asm
 ;---------------------------------------------------
 ; Syntax_ApplySquiggly
 ; Applica sottolineatura ondulata al range [nStart, nEnd]
-; Input:  hRichEdit, nStart, nEnd
 ;---------------------------------------------------
 Syntax_ApplySquiggly proc hRE:DWORD, nStart:DWORD, nEnd:DWORD
     LOCAL cf2:CHARFORMAT2
 
-    ; Seleziona il range del token
-    ; ...
-    
-    ; Configura CHARFORMAT2 per sottolineatura ondulata
-    mov  cf2.cbSize,        sizeof CHARFORMAT2
-    mov  cf2.dwMask,        CFM_UNDERLINETYPE or CFM_UNDERLINECOLOR
-    mov  cf2.bUnderlineType, CFU_UNDERLINEWAVE   ; valore 3
-    
-    ; Colore dal tema attivo — mai hardcoded
+    mov  cf2.cbSize,         sizeof CHARFORMAT2
+    mov  cf2.dwMask,         CFM_UNDERLINETYPE or CFM_UNDERLINECOLOR
+    mov  cf2.bUnderlineType, CFU_UNDERLINEWAVE      ; valore 3
     mov  eax, g_Theme.clrSquiggly
     mov  cf2.crUnderlineColor, eax
 
@@ -568,39 +600,119 @@ Syntax_ApplySquiggly endp
 ### Esempi visivi
 
 ```asm
-mov  eax, ebx          ; tutto riconosciuto → colorato normalmente
-mov  eax, AEX          ; "AEX" sconosciuto → ~~~~ rosso sotto AEX
-push MyProc            ; "MyProc" è in symtable → ok, nessuna sottolineatura
-push UnknownSym        ; non in symtable → ~~~~ rosso sotto UnknownSym
-.386                   ; direttiva riconosciuta → colore direttiva
+mov  eax, ebx       ; tutto riconosciuto → colorato normalmente
+mov  eax, AEX       ; "AEX" sconosciuto → ~~~~ rosso sotto AEX
+push MyProc         ; "MyProc" è in symtable → nessuna sottolineatura
+push UnknownSym     ; non in symtable → ~~~~ rosso sotto UnknownSym
 ```
 
 ---
 
-## 10. AsmSense — Paragonabile a IntelliSense
+## 10. Indent Guides
 
-AsmSense è composto da tre livelli implementati in ordine crescente di complessità.
+`indentguide.asm` disegna linee verticali tratteggiate sottili che collegano visivamente i blocchi di apertura e chiusura, facilitando la lettura del codice profondamente indentato.
+
+### Blocchi riconosciuti
+
+| Apertura | Chiusura |
+|---|---|
+| `.IF` | `.ENDIF` |
+| `.WHILE` | `.ENDW` |
+| `.REPEAT` | `.UNTIL` / `.UNTILCXZ` |
+| `STRUCT` | `ENDS` |
+| `MACRO` | `ENDM` |
+| `PROC` | `ENDP` |
+
+### Implementazione tecnica
+
+Le linee vengono disegnate intercettando `WM_PAINT` del RichEdit e aggiungendo il disegno al termine del ciclo di pittura standard, su un layer sovrapposto trasparente. Questo approccio non interferisce con il contenuto del testo.
+
+### Esempio visivo
+
+```asm
+5  .IF eax == 0
+6  │  mov ebx, 1
+7  │  .IF ecx == 2
+8  │  │  push edx
+9  │  .ENDIF
+10 .ENDIF
+```
+
+- Colore configurabile nel tema (`clrIndentGuide`) — discreto nel Light, appena visibile nel Dark
+- Attivabile/disattivabile da *Visualizza → Indent Guides* e dalle impostazioni
+
+---
+
+## 11. Ricerca nel progetto
+
+`search.asm` fornisce un dialog floating **non modale** che rimane aperto durante la navigazione tra i risultati.
+
+### Modalità operative
+
+```
+┌─────────────────────────────────────────────────┐
+│  🔍 Cerca in AsmWorkbench                       │
+│                                                  │
+│  Cerca:    [________________]  [Cerca]           │
+│  Sostituisci: [____________]  [Sostituisci]      │
+│                               [Sostituisci tutto]│
+│                                                  │
+│  ◉ File corrente  ○ Progetto completo            │
+│                                                  │
+│  [ ] Maiuscole/minuscole   [ ] Parola intera     │
+└─────────────────────────────────────────────────┘
+```
+
+### Flusso di ricerca sul progetto
+
+```
+Utente avvia ricerca su "Progetto completo"
+        │
+        ▼
+Per ogni file .asm nel progetto
+        │
+        ├── Apri file in memoria
+        ├── Scansiona con EM_FINDTEXTEX
+        ├── Raccogli risultati in lista SEARCHRESULT
+        └── Chiudi buffer temporaneo
+        │
+        ▼
+Mostra risultati nel pannello [▼ Ricerca]
+  main.asm(12):   call MyProc
+  utils.asm(45):  MyProc proc
+        │
+        ▼
+Click su risultato → apre file nella tab + salta alla riga
+```
+
+### Shortcut tastiera
+
+| Shortcut | Azione |
+|---|---|
+| `Ctrl+F` | Apre dialog ricerca (file corrente) |
+| `Ctrl+Shift+F` | Apre dialog ricerca (progetto completo) |
+| `Ctrl+H` | Apre dialog con tab Sostituisci attiva |
+| `F3` | Prossima corrispondenza |
+| `Shift+F3` | Corrispondenza precedente |
+| `Esc` | Chiude il dialog |
+
+---
+
+## 12. AsmSense — Paragonabile a IntelliSense
 
 ### Livello 1 — Autocomplete
 
 Trigger: 2 o più caratteri alfanumerici digitati consecutivamente.
 
-Fonti consultate in ordine:
-1. Mnemonici x86 (hardcoded in `asmsense.asm`)
-2. Registri x86 (hardcoded)
-3. Simboli del progetto (`symtable.asm`)
-4. API Win32 (`apidb.inc`)
+Fonti in ordine: mnemonici x86 → registri → `symtable` → `apidb.inc`.
 
 ```
 Utente digita "CR"
-       │
-       ▼
 ┌─────────────────────┐
 │  CALL               │
 │  CMP                │
-│  CreateWindowEx  ◀──┼── da apidb.inc
+│  CreateWindowEx     │ ← da apidb.inc
 │  CreateFileA        │
-│  ...                │
 └─────────────────────┘
 ```
 
@@ -610,7 +722,6 @@ Trigger: spazio dopo `INVOKE`.
 
 ```
 INVOKE CreateWindowEx, |
-                       ▲
 ┌──────────────────────────────────────────────┐
 │  CreateWindowEx(dwExStyle, lpClassName,      │
 │                 lpWindowName, dwStyle,        │
@@ -634,9 +745,9 @@ APIENTRY <"VirtualAlloc",    4, "lpAddress, dwSize, flAllocationType, flProtect"
 
 ---
 
-## 11. Resource Editor
+## 13. Resource Editor
 
-Il Resource Editor permette di progettare visualmente le risorse Windows e generare il file `.rc`.
+Designer visuale per risorse Windows con generazione automatica del file `.rc`.
 
 | Tipo | Descrizione |
 |---|---|
@@ -652,7 +763,31 @@ Designer visuale  ──▶  Generazione .rc  ──▶  Compilazione (rc.exe)  
 
 ---
 
-## 12. Integrazione Assembler
+## 14. Sistema di notifica aggiornamenti
+
+`updater.asm` gestisce il controllo silenzioso degli aggiornamenti disponibili.
+
+### Comportamento
+
+- Eseguito in un thread separato all'avvio — non blocca l'interfaccia
+- Interroga l'API GitHub: `GET https://api.github.com/repos/<owner>/AsmWorkbench/releases/latest`
+- Confronta il campo `tag_name` della risposta con la versione corrente dell'eseguibile
+- Se disponibile una versione più recente: mostra una notifica discreta nella **statusbar** (`⬆ v1.x disponibile`)
+- Click sulla notifica: apre il browser sulla pagina delle release GitHub
+- Il download e l'installazione restano **manuali** — l'utente decide quando aggiornare
+- Disattivabile con `CheckUpdates=0` nel file INI
+
+### Tecnologia
+
+Usa esclusivamente `wininet.dll`, già presente su ogni installazione Windows. Nessuna dipendenza esterna.
+
+### Perché non aggiornamento automatico
+
+Un eseguibile non può sostituire se stesso mentre è in esecuzione. La soluzione (un `Updater.exe` esterno separato) aggiunge complessità non necessaria nelle fasi attuali del progetto. La notifica con download manuale è la scelta corretta per un tool di sviluppo, dove l'utente vuole sempre sapere cosa cambia prima di aggiornare.
+
+---
+
+## 15. Integrazione Assembler
 
 L'assembler è sviluppato in repository separato e integrato come tool di build esterno.
 
@@ -680,7 +815,7 @@ nomefile.asm(87): avviso W003: istruzione non raggiungibile
 
 ---
 
-## 13. Integrazione Debugger
+## 16. Integrazione Debugger
 
 Ultimo step della roadmap. Integrato come pannello aggiuntivo della finestra principale.
 
@@ -709,61 +844,69 @@ Ultimo step della roadmap. Integrato come pannello aggiuntivo della finestra pri
 
 ---
 
-## 14. Flusso messaggi Win32
+## 17. Flusso messaggi Win32
 
 ```
 WinMain
   │
-  ├─► Theme_Load              (theme.asm)      ← prima di tutto
-  ├─► RegisterClass           (mainwnd.asm)
+  ├─► Theme_Load               (theme.asm)      ← prima di tutto
+  ├─► RegisterClass            (mainwnd.asm)
   ├─► CreateMainWindow
-  │     ├─► CreateToolbar     (toolbar.asm)
-  │     ├─► CreateTabBar      (tabbar.asm)
-  │     ├─► CreateRichEdit    (editor.asm)
-  │     ├─► CreateStatusBar   (statusbar.asm)
-  │     ├─► CreateProjectTree (project.asm)
-  │     └─► CreatePanels      (panelmgr.asm)
+  │     ├─► CreateToolbar      (toolbar.asm)
+  │     ├─► CreateTabBar       (tabbar.asm)
+  │     ├─► CreateRichEdit     (editor.asm)
+  │     ├─► CreateStatusBar    (statusbar.asm)
+  │     ├─► CreateProjectTree  (project.asm)
+  │     └─► CreatePanels       (panelmgr.asm)
+  │
+  ├─► Updater_CheckAsync       (updater.asm)    ← thread separato
   │
   └─► Message Loop
-        ├─► WM_CREATE     → inizializza sottocomponenti
-        ├─► WM_SIZE       → ridisegna layout
-        ├─► WM_COMMAND    → menu e toolbar
-        ├─► WM_NOTIFY     → eventi da RichEdit e Tab Bar
-        ├─► WM_DRAWITEM   → ridisegna tab custom
-        ├─► WM_KEYDOWN    → shortcut tastiera
-        ├─► WM_CLOSE      → controlla file non salvati
-        └─► WM_DESTROY    → cleanup + PostQuitMessage
+        ├─► WM_CREATE       → inizializza sottocomponenti
+        ├─► WM_SIZE         → ridisegna layout
+        ├─► WM_COMMAND      → menu e toolbar
+        ├─► WM_NOTIFY       → eventi da RichEdit e Tab Bar
+        ├─► WM_DRAWITEM     → ridisegna tab custom
+        ├─► WM_KEYDOWN      → shortcut tastiera
+        ├─► WM_CLOSE        → controlla file non salvati
+        └─► WM_DESTROY      → cleanup + PostQuitMessage
 ```
 
 ---
 
-## 15. Convenzioni di codice
+## 18. Convenzioni di codice
 
-```nasm
+```asm
 ; Procedure: PascalCase con prefisso modulo
 Editor_GetCurrentLine  proc
 TabBar_DrawTab         proc
 Theme_Load             proc
 Syntax_ValidateToken   proc
+Search_FindInProject   proc
+IndentGuide_Repaint    proc
 
 ; Variabili globali (globals.inc): prefisso g_
 g_hMainWnd    dd  0
 g_hRichEdit   dd  0
-g_Theme       THEME <>    ; tema attivo corrente
+g_Theme       THEME <>
 
 ; Variabili locali: prefisso lv_
 lv_hDC        dd  0
 
 ; Costanti: UPPER_SNAKE_CASE
-IDM_FILE_NEW       equ 1001
-IDM_VIEW_LIGHT     equ 3001
-IDM_VIEW_DARK      equ 3002
-IDM_VIEW_CUSTOM    equ 3003
+IDM_FILE_NEW        equ 1001
+IDM_EDIT_FIND       equ 1101
+IDM_EDIT_FINDALL    equ 1102
+IDM_EDIT_REPLACE    equ 1103
+IDM_VIEW_LIGHT      equ 3001
+IDM_VIEW_DARK       equ 3002
+IDM_VIEW_CUSTOM     equ 3003
+IDM_VIEW_INDENT     equ 3004
 ```
 
 Struttura di ogni procedura:
 
-```nasm
+```asm
 ;---------------------------------------------------
 ; NomeModulo_NomeProcedura
 ; Descrizione: cosa fa questa procedura
@@ -780,32 +923,35 @@ NomeModulo_NomeProcedura endp
 
 ---
 
-## 16. Roadmap di sviluppo
+## 19. Roadmap di sviluppo
 
 | Step | Modulo | Obiettivo | Stato |
 |:----:|--------|-----------|:-----:|
 | 1 | `main.asm` + `mainwnd.asm` | Finestra principale con menu base | ⬜ |
 | 2 | `tabbar.asm` | Tab bar custom owner-draw con ● e × | ⬜ |
 | 3 | `editor.asm` | RichEdit 4.1 embedded con gestione resize | ⬜ |
-| 4 | `filemgr.asm` | New / Open / Save / Save As | ⬜ |
+| 4 | `filemgr.asm` | New / Open / Save / Save As / Save All | ⬜ |
 | 5 | `statusbar.asm` | Riga, colonna, flag modificato | ⬜ |
 | 6 | `theme.asm` + `theme.inc` | Sistema temi Light / Dark / Custom | ⬜ |
 | 7 | `syntax.asm` | Highlighting + sottolineatura ondulata | ⬜ |
-| 8 | `toolbar.asm` | Toolbar con azioni principali | ⬜ |
-| 9 | `project.asm` | Progetto `.awb` e project tree | ⬜ |
-| 10 | `panelmgr.asm` | Pannelli Output / Errori / Simboli | ⬜ |
-| 11 | Build | Integrazione assembler esterno | ⬜ |
-| 12 | `symtable.asm` | Parser simboli del progetto | ⬜ |
-| 13 | `asmsense.asm` | Autocomplete + Parameter Hints | ⬜ |
-| 14 | Symbol Navigator | Pannello simboli con navigazione | ⬜ |
-| 15 | `reseditor.asm` | Resource editor visuale | ⬜ |
-| 16 | Debugger | Integrazione debugger step-by-step | ⬜ |
+| 8 | `indentguide.asm` | Linee guida indentazione blocchi | ⬜ |
+| 9 | `toolbar.asm` | Toolbar icone con azioni principali | ⬜ |
+| 10 | `search.asm` | Ricerca e sostituzione file/progetto | ⬜ |
+| 11 | `project.asm` | Progetto `.awb` e project tree | ⬜ |
+| 12 | `panelmgr.asm` | Pannelli Output / Errori / Simboli / Ricerca | ⬜ |
+| 13 | `updater.asm` | Notifica aggiornamenti disponibili | ⬜ |
+| 14 | Build | Integrazione assembler esterno | ⬜ |
+| 15 | `symtable.asm` | Parser simboli del progetto | ⬜ |
+| 16 | `asmsense.asm` | Autocomplete + Parameter Hints | ⬜ |
+| 17 | Symbol Navigator | Pannello simboli con navigazione | ⬜ |
+| 18 | `reseditor.asm` | Resource editor visuale | ⬜ |
+| 19 | Debugger | Integrazione debugger step-by-step | ⬜ |
 
 Legenda: ⬜ Da fare · 🔄 In corso · ✅ Completato
 
 ---
 
-## 17. Autori e partner
+## 20. Autori e partner
 
 **Ideazione, progettazione e sviluppo**
 Sviluppatore principale e ideatore del progetto.
