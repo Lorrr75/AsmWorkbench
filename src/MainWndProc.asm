@@ -11,17 +11,18 @@ LOCAL	hdc:HDC
 LOCAL	ps:PAINTSTRUCT
 LOCAL	rect:RECT
 
-	.IF uMsg == WM_DESTROY
+	.IF uMsg == WM_DESTROY				; messaggio di chiusura della finestra
 		invoke PostQuitMessage, NULL
 
-	.ELSEIF uMsg == WM_CREATE
+	.ELSEIF uMsg == WM_CREATE			; messaggio di creazione della finestra
+		invoke	InitIde, hWnd
 
-	.ELSEIF uMsg == WM_PAINT
+	.ELSEIF uMsg == WM_PAINT			; messaggio di ridisegno della finestra
 		invoke	BeginPaint, hWnd, ADDR ps
 		invoke	EndPaint, hWnd, ADDR ps
 		ret
 		
-	.ELSEIF uMsg == WM_COMMAND
+	.ELSEIF uMsg == WM_COMMAND			; messaggio comandi della finestra
 	
 	.ELSEIF uMsg == WM_CLOSE
 		invoke	DestroyWindow, hWnd

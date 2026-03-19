@@ -1,7 +1,20 @@
+; questo file contiene costanti 
+
+
+; valori costanti utili al programma funzionanti come macro
+
+IDC_STATUSBAR		equ 100
+
 .data
 
-szMainClassName 			db "LR_AW",0			; Nome della classe finestra principale
-szAppName				db "Asm Workbench",0		; Nome dell'applicazione
+; dati costanti memorizzati in memoria per il funzionamento del programma
+
+szMainClassName 		db "LR_AW",0			; Nome della classe finestra principale
+szAppName			db "Asm Workbench",0		; Nome dell'applicazione
+szStatusBarClass		db "msctls_statusbar32",0	; Nome della classe StatusBar
+szStatusReady			db "Lin 1 Col 1",0		; testo iniziale della creazione della StatusBar
+szStatusNoFile			db "Nessun File",0		; testo iniziale della creazione della StatusBar
+
 
 ;
 ; Messaggi di Attenzione per Message Box

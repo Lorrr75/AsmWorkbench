@@ -36,9 +36,9 @@ main:
 ; alleghiamo altri file sorgente per la compilazione
 
 include src\WinMain.asm			; corpo principale del programma
-include src\MainWndProc.asm			; funzione callback gestione messaggi finestra principale
+include src\MainWndProc.asm		; funzione callback gestione messaggi finestra principale
 include src\RegisterWindowMainClass.asm	; funzione registrazione classe della finestra
-;include src\InitIde.asm			; funzione di inizializzazione 
+include src\InitIde.asm			; funzione di inizializzazione 
 ;include src\DeInitIde.asm			; funzione di cancellazione dai inizializzati
 
 ; qui indichiamo la fine del file con il punto d'ingresso del programma
