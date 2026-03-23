@@ -40,6 +40,8 @@ include src\MainWndProc.asm		; funzione callback gestione messaggi finestra prin
 include src\RegisterWindowMainClass.asm	; funzione registrazione classe della finestra
 include src\InitIde.asm			; funzione di inizializzazione 
 ;include src\DeInitIde.asm			; funzione di cancellazione dai inizializzati
+include src\TabBar.asm			; funzione riguardanti la Tab Bar
+
 
 ; qui indichiamo la fine del file con il punto d'ingresso del programma
 end	main

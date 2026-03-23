@@ -11,7 +11,20 @@
 InitIde	proc hWnd:DWORD
 LOCAL	aParts[3]:DWORD			; numero di parti della StatusBar
 
-	; crea la StatusBar
+	; Partimamo con la creazione della TabBar
+	invoke	TabBar_RegisterClass
+	cmp	eax, 0			; ci sono stati degli errori?
+	je 	InitIde_Error		; si, vai a comunicarlo
+
+	; nessun errore per cui possiamo crearla
+	invoke	TabBar_Create, hWnd
+	mov	g_hTabBar, eax		;salva handle della tab bar
+	cmp	eax, 0			; ci sono stati degli errori?
+	je 	InitIde_Error		; si, vai a comunicarlo
+
+
+
+	; ora creaiamo la StatusBar
 	invoke CreateWindowEx, NULL, ADDR szStatusBarClass, NULL, WS_CHILD or WS_VISIBLE or SBARS_SIZEGRIP,
 				0, 0, 0, 0, hWnd, IDC_STATUSBAR, hInstance, NULL
 

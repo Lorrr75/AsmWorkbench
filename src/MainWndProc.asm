@@ -10,6 +10,8 @@ MainWndProc proc hWnd:HWND, uMsg:UINT, wParam:WPARAM, lParam:LPARAM
 LOCAL	hdc:HDC
 LOCAL	ps:PAINTSTRUCT
 LOCAL	rect:RECT
+LOCAL	nWidth:DWORD
+LOCAL	nHeight:DWORD
 
 	.IF uMsg == WM_DESTROY				; messaggio di chiusura della finestra
 		invoke PostQuitMessage, NULL
@@ -26,7 +28,21 @@ LOCAL	rect:RECT
 	
 	.ELSEIF uMsg == WM_CLOSE
 		invoke	DestroyWindow, hWnd
+
 	.ELSEIF uMsg == WM_SIZE
+		mov	eax, lParam
+		movzx	ecx, ax				; copia la larghezza in ECX
+		shr	eax, 16				; in eax rimane l'altezza
+
+		mov	nWidth, ecx			;memorizza valori appena trovati
+		mov	nHeight, eax
+
+		; posiziona la TabBar in cina alla finestra
+		invoke	MoveWindow, g_hTabBar, 0, 0, ecx, TABBAR_HEIGHT, TRUE
+
+		; posiziona StatusBar in fondo alla finestra (ha già la proprietà di auto ridimensionarsi con SBAR_SIZEGRIP)
+		invoke	SendMessage, g_hStatusBar, WM_SIZE, 0, 0
+			
 	.ELSEIF uMsg == WM_MOVE
 	.ELSEIF uMsg == WM_MOUSEMOVE
 	.ELSEIF uMsg == WM_LBUTTONDOWN

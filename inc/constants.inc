@@ -4,6 +4,11 @@
 ; valori costanti utili al programma funzionanti come macro
 
 IDC_STATUSBAR		equ 100
+IDC_TABBAR		equ 101
+
+
+TABBAR_HEIGHT		equ 28
+
 
 .data
 
@@ -14,6 +19,11 @@ szAppName			db "Asm Workbench",0		; Nome dell'applicazione
 szStatusBarClass		db "msctls_statusbar32",0	; Nome della classe StatusBar
 szStatusReady			db "Lin 1 Col 1",0		; testo iniziale della creazione della StatusBar
 szStatusNoFile			db "Nessun File",0		; testo iniziale della creazione della StatusBar
+
+; dati per la TabBar
+szTabBarClass			db "AWB_TabBar",0
+
+
 
 
 ;

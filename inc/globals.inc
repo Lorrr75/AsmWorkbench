@@ -4,7 +4,11 @@
 
 .data?
 
+; Finestra principale
 g_hMainWnd		HWND ?			; handle della finestra principale
 hInstance    		HINSTANCE ?		; istanza del programma principale
 CommandLine  		LPSTR ?			; puntatore alla linea di comando del programma
 g_hStatusBar		HWND ?			; handle della status bar
+
+; TabBar
+g_hTabBar		HWND ?			; handle della TabBar
