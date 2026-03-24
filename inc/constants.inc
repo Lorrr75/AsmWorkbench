@@ -10,6 +10,15 @@ IDC_TABBAR		equ 101
 TABBAR_HEIGHT		equ 28
 
 
+; valori provvisori del tema Light
+TAB_COLOR_BG		equ 00f0f0f0h		; sfondo grigio chiaro della TabBar
+TAB_COLOR_ACTIVE	equ 00ffffffh		; Tab attiva - colore bianco
+TAB_COLOR_INACTIVE	equ 00d0d0d0h		; Tab inattiva - grigio
+TAB_COLOR_TEXT		equ 00000000h		; testo - nero
+TAB_COLOR_MODIFIED	equ 000000ffh		; pallino della modifica - blu
+TAB_COLOR_BORDER	equ 00a0a0a0h		; bordo Tab - grigio scuro
+
+
 .data
 
 ; dati costanti memorizzati in memoria per il funzionamento del programma
@@ -22,7 +31,8 @@ szStatusNoFile			db "Nessun File",0		; testo iniziale della creazione della Stat
 
 ; dati per la TabBar
 szTabBarClass			db "AWB_TabBar",0
-
+szTabClose			db "x",0
+szTabTest			db "main.asm",0			; tab di test - da rimuovere in seguito
 
 
 
