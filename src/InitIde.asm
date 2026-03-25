@@ -43,12 +43,7 @@ LOCAL	aParts[3]:DWORD			; numero di parti della StatusBar
 	invoke	SendMessage, g_hStatusBar, SB_SETTEXT, 1, ADDR szStatusNoFile
 	invoke	SendMessage, g_hStatusBar, SB_SETTEXT, 2, NULL
 
-
-
-	mov	eax, 0				; trovato errori?
-	je	InitIde_Error			; si salta e segnale errore
-
-	mov	eax, 1				; no, comunica che è tutto OK
+	mov	eax, 1				; comunica che è tutto OK
 	ret
 
 InitIde_Error:
