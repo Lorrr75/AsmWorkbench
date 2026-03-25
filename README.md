@@ -100,22 +100,30 @@ L'obiettivo non è "fare come Visual Studio" — è offrire **lo stesso livello 
 AsmWorkbench è composto da moduli separati con responsabilità precise:
 
 ```
+AsmWorkbench.asm          ← Entry point, include di tutto il progetto
 src/
-├── main.asm          ← Entry point, WinMain, message loop
-├── mainwnd.asm       ← Finestra principale + WndProc
-├── tabbar.asm        ← Tab bar custom owner-draw
-├── editor.asm        ← Wrapper RichEdit
-├── syntax.asm        ← Syntax highlighting
-├── toolbar.asm       ← Toolbar
-├── statusbar.asm     ← Barra di stato (riga/colonna/modificato)
-├── filemgr.asm       ← Gestione file (open/save/dialog)
-├── project.asm       ← Gestione progetto .awb
-├── panelmgr.asm      ← Layout pannelli ridimensionabili
-├── config.asm        ← Configurazione (file INI)
-├── symtable.asm      ← Parser e database simboli (AsmSense)
-├── asmsense.asm      ← UI autocomplete e parameter hints
-├── reseditor.asm     ← Resource editor visuale
-└── macros.inc        ← Macro Win32 condivise
+├── WinMain.asm           ← Corpo principale e message loop
+├── MainWndProc.asm       ← Gestione messaggi finestra principale
+├── RegisterWindowMainClass.asm ← Registrazione classe finestra
+├── InitIde.asm           ← Inizializzazione componenti (WM_CREATE)
+├── TabBar.asm            ← Tab bar custom owner-draw        ← IN CORSO
+├── Editor.asm            ← Wrapper RichEdit                 [futuro]
+├── Syntax.asm            ← Syntax highlighting              [futuro]
+├── Toolbar.asm           ← Toolbar icone                    [futuro]
+├── FileMgr.asm           ← Gestione file                    [futuro]
+├── Project.asm           ← Gestione progetto .awb           [futuro]
+├── PanelMgr.asm          ← Layout pannelli                  [futuro]
+├── Theme.asm             ← Sistema temi e colori            [futuro]
+├── SymTable.asm          ← Database simboli (AsmSense)      [futuro]
+├── AsmSense.asm          ← Autocomplete e parameter hints   [futuro]
+└── ResEditor.asm         ← Resource editor visuale          [futuro]
+inc/
+├── CommonHeader.inc      ← Header MASM32
+├── CommonLib.inc         ← Librerie di sistema
+├── Proto.inc             ← Prototipi funzioni
+├── constants.inc         ← Costanti, stringhe, ID controlli
+├── globals.inc           ← Variabili globali
+└── structs.inc           ← Strutture dati custom
 ```
 
 ### Layout finestra principale
@@ -147,23 +155,29 @@ src/
 
 ## Roadmap
 
-|Step|Modulo|Obiettivo|
-|:-:|-|-|
-|1|`main.asm` + `mainwnd.asm`|Finestra principale con menu base|
-|2|`tabbar.asm`|Tab bar custom owner-draw con ● e ×|
-|3|`editor.asm`|RichEdit embedded con gestione resize|
-|4|`filemgr.asm`|New / Open / Save / Save As|
-|5|`statusbar.asm`|Riga, colonna, flag modificato|
-|6|`syntax.asm`|Syntax highlighting mnemonici e registri|
-|7|`toolbar.asm`|Toolbar con azioni principali|
-|8|`project.asm`|Progetto `.awb` e project tree|
-|9|`panelmgr.asm`|Pannelli Output / Errori / Simboli|
-|10|Build|Integrazione assembler esterno|
-|11|`symtable.asm`|Parser simboli del progetto|
-|12|`asmsense.asm`|Autocomplete + Parameter Hints|
-|13|Symbol Navigator|Pannello simboli con navigazione|
-|14|`reseditor.asm`|Resource editor visuale|
-|15|Debugger|Integrazione debugger step-by-step|
+|Step|Modulo|Obiettivo|Stato|
+|:-:|-|-|:-:|
+|1|`AsmWorkbench.asm` + `WinMain.asm` + `RegisterWindowMainClass.asm`|Finestra principale funzionante|✅|
+|2|`InitIde.asm` — StatusBar|StatusBar con 3 sezioni e testi|✅|
+|3|`TabBar.asm`|Tab bar custom owner-draw con ● e ×|🔄|
+|4|`Editor.asm`|RichEdit 4.1 embedded con gestione resize|⬜|
+|5|`FileMgr.asm`|New / Open / Save / Save As|⬜|
+|6|`Theme.asm`|Sistema temi Light / Dark / Custom|⬜|
+|7|`Syntax.asm`|Syntax highlighting + sottolineatura ondulata|⬜|
+|8|`IndentGuide.asm`|Linee guida indentazione blocchi|⬜|
+|9|`Toolbar.asm`|Toolbar icone con azioni principali|⬜|
+|10|`Search.asm`|Ricerca e sostituzione file/progetto|⬜|
+|11|`Project.asm`|Progetto `.awb` e project tree|⬜|
+|12|`PanelMgr.asm`|Pannelli Output / Errori / Simboli|⬜|
+|13|`Updater.asm`|Notifica aggiornamenti disponibili|⬜|
+|14|Build|Integrazione assembler esterno|⬜|
+|15|`SymTable.asm`|Parser simboli del progetto|⬜|
+|16|`AsmSense.asm`|Autocomplete + Parameter Hints|⬜|
+|17|Symbol Navigator|Pannello simboli con navigazione|⬜|
+|18|`ResEditor.asm`|Resource editor visuale|⬜|
+|19|Debugger|Integrazione debugger step-by-step|⬜|
+
+Legenda: ⬜ Da fare · 🔄 In corso · ✅ Completato
 
 \---
 
@@ -187,13 +201,14 @@ src/
 
 ```
 AsmWorkbench/
-├── src/          ← Sorgenti assembly
-├── inc/          ← File include (globals, structs, constants, apidb)
-├── res/          ← Risorse (RC, bitmap, icone)
-├── build/        ← Output compilazione (non versionato)
-├── docs/         ← Documentazione tecnica
-├── make.bat      ← Script di build
-└── README.md
+├── AsmWorkbench.asm  ← Entry point
+├── src/              ← Sorgenti assembly
+├── inc/              ← File include (globals, structs, constants)
+├── res/              ← Risorse (icone)
+├── docs/             ← Documentazione tecnica
+├── make.bat          ← Script di build
+├── README.md
+└── LICENSE EUPL-1.2.txt
 ```
 
 \---
@@ -245,5 +260,5 @@ Testo completo: https://eupl.eu/1.2/it/
 
 \---
 
-*Progetto avviato nel 2026 — Sviluppo attivo*
+*Progetto avviato nel 2026 — Sviluppo attivo — Step 1✅ 2✅ 3🔄*
 

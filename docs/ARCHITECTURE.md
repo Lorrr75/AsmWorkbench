@@ -112,16 +112,15 @@ AsmWorkbench/
 ├── src/                    ← Sorgenti Assembly
 │   ├── WinMain.asm         ← Corpo principale, message loop, gestione errori
 │   ├── MainWndProc.asm     ← WndProc — gestione messaggi finestra principale
-│   ├── RegisterWindowMainClass.asm ← Registrazione classe finestra
+│   ├── RegisterWindowMainClass.asm ← Registrazione classe finestra principale
 │   ├── InitIde.asm         ← Creazione e init di tutti i componenti (WM_CREATE)
+│   ├── TabBar.asm          ← Tab bar custom owner-draw              ← IN CORSO
 │   ├── DeInitIde.asm       ← Pulizia risorse (WM_DESTROY)          [futuro]
-│   ├── TabBar.asm          ← Tab bar custom owner-draw              [futuro]
 │   ├── Editor.asm          ← Wrapper RichEdit                       [futuro]
 │   ├── Syntax.asm          ← Syntax highlighting + validazione      [futuro]
 │   ├── IndentGuide.asm     ← Linee guida indentazione blocchi       [futuro]
 │   ├── Search.asm          ← Ricerca file corrente e progetto       [futuro]
 │   ├── Toolbar.asm         ← Toolbar icone sotto il menu            [futuro]
-│   ├── StatusBar.asm       ← Gestione barra di stato                [futuro]
 │   ├── FileMgr.asm         ← Gestione file (open/save/dialogs)      [futuro]
 │   ├── Project.asm         ← Gestione progetto .awb                 [futuro]
 │   ├── PanelMgr.asm        ← Layout pannelli ridimensionabili       [futuro]
@@ -133,11 +132,11 @@ AsmWorkbench/
 │   └── ResEditor.asm       ← Resource editor visuale                [futuro]
 │
 ├── inc/                    ← File include condivisi
-│   ├── CommonHeader.inc    ← Include Windows.inc e altri header
+│   ├── CommonHeader.inc    ← Include Windows.inc e altri header MASM32
 │   ├── CommonLib.inc       ← Includelib per le librerie di sistema
 │   ├── Proto.inc           ← Prototipi di tutte le funzioni
-│   ├── constants.inc       ← Costanti, stringhe, ID controlli
-│   ├── globals.inc         ← Variabili globali condivise tra moduli
+│   ├── constants.inc       ← Costanti EQU, stringhe, ID controlli, colori tema
+│   ├── globals.inc         ← Variabili globali .data? condivise tra moduli
 │   ├── structs.inc         ← Strutture dati custom (DOCUMENT, PROJECT...)
 │   ├── theme.inc           ← Struttura THEME e costanti temi        [futuro]
 │   └── apidb.inc           ← Database Win32 API per AsmSense        [futuro]
@@ -145,7 +144,7 @@ AsmWorkbench/
 ├── res/                    ← Risorse Windows
 │   └── icons/              ← File icone .ico
 │
-├── doc/                    ← Documentazione tecnica
+├── docs/                   ← Documentazione tecnica
 │   └── ARCHITECTURE.md     ← Questo file
 │
 ├── make.bat                ← Script di build (ml + link)
@@ -156,7 +155,7 @@ AsmWorkbench/
 └── LICENSE EUPL-1.2.txt    ← Testo EUPL v1.2
 ```
 
-> **Nota sul .gitignore**: i file `*.exe` e `*.obj` dovrebbero essere esclusi dal versionamento. Aggiungere al `.gitignore`: `*.exe`, `*.obj`, `*.res`.
+> **Nota sul .gitignore**: aggiungere `*.exe`, `*.obj`, `*.res` per escludere i file compilati dal versionamento.
 
 ---
 
@@ -742,7 +741,7 @@ Pannello laterale con tutti i simboli del file corrente e navigazione diretta al
 
 ### Struttura `apidb.inc`
 
-```nasm
+```asm
 APIENTRY <"MessageBox",      4, "hWnd, lpText, lpCaption, uType">
 APIENTRY <"CreateWindowEx", 12, "dwExStyle, lpClassName, lpWindowName, dwStyle, X, Y, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam">
 APIENTRY <"VirtualAlloc",    4, "lpAddress, dwSize, flAllocationType, flProtect">
@@ -932,9 +931,9 @@ NomeModulo_NomeProcedura endp
 
 | Step | Modulo | Obiettivo | Stato |
 |:----:|--------|-----------|:-----:|
-| 1 | `AsmWorkbench.asm` + `WinMain.asm` + `RegisterWindowMainClass.asm` | Finestra principale con menu base | ✅ |
-| 2 | `InitIde.asm` + `StatusBar` | StatusBar con sezioni e testo | ✅ |
-| 3 | `TabBar.asm` | Tab bar custom owner-draw con ● e × | ⬜ |
+| 1 | `AsmWorkbench.asm` + `WinMain.asm` + `RegisterWindowMainClass.asm` | Finestra principale funzionante | ✅ |
+| 2 | `InitIde.asm` — StatusBar | StatusBar con 3 sezioni e testi | ✅ |
+| 3 | `TabBar.asm` | Tab bar custom owner-draw con ● e × | 🔄 |
 | 4 | `Editor.asm` | RichEdit 4.1 embedded con gestione resize | ⬜ |
 | 5 | `FileMgr.asm` | New / Open / Save / Save As / Save All | ⬜ |
 | 6 | `Theme.asm` + `theme.inc` | Sistema temi Light / Dark / Custom | ⬜ |
@@ -979,4 +978,4 @@ Testo completo: [https://eupl.eu/1.2/it/](https://eupl.eu/1.2/it/)
 
 ---
 
-*Documento aggiornato: 2026 — AsmWorkbench è in sviluppo attivo — Step 1-2 completati*
+*Documento aggiornato: 2026 — AsmWorkbench è in sviluppo attivo — Step 1✅ 2✅ 3🔄*
