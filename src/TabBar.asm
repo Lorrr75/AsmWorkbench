@@ -61,6 +61,8 @@ LOCAL 	ps:PAINTSTRUCT
 LOCAL	rc:RECT
 LOCAL	hBrush:DWORD
 LOCAL	rcTab:RECT
+LOCAL	nClickX, nClickY:DWORD
+
 
 	.IF uMsg == WM_PAINT
 		invoke BeginPaint, hWnd, ADDR ps
@@ -86,6 +88,35 @@ LOCAL	rcTab:RECT
 		invoke	EndPaint, hWnd, ADDR ps
 		xor	eax, eax
 		ret	
+	.ELSEIF uMsg == WM_LBUTTONDOWN
+		
+		; estrae le coordinate del click da lParam
+		mov	eax, lParam
+		movzx	ecx, ax			; X del click
+		mov	nClickX, ecx
+		shr	eax, 16			; Y del click
+		mov	nClickY, eax
+
+		; controlla la zona della X
+		; ora lo fa sull'unica presente il tab di test
+		; quando avremo la sita di tab dinamica itereremo su tutte
+		mov	ecx, nClickX
+		cmp	ecx, 102		; 120 - 18 = 102 zona della X
+		jl	TabBar_LBDown_notClose
+		cmp	ecx, 116		; 120 - 4 = 116 zona della X
+		jg	TabBar_LBDown_notClose 
+
+		mov	ecx, nClickY
+		cmp	ecx, 4			; zona della X
+		jl	TabBar_LBDown_notClose
+		cmp	ecx, 20			; zona della X
+		jg	TabBar_LBDown_notClose 
+		
+		; se giunto fino a qui hai cliccato sulla X e mostra solo un messaggio
+		invoke	MessageBox, hWnd, ADDR szTabCloseMsg, ADDR szCaptionWarning, MB_OK
+TabBar_LBDown_notClose:
+		xor	eax, eax
+		ret
 	.ELSEIF
 		invoke	DefWindowProc, hWnd, uMsg, wParam, lParam
 		ret

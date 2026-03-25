@@ -32,8 +32,7 @@ szStatusNoFile			db "Nessun File",0		; testo iniziale della creazione della Stat
 ; dati per la TabBar
 szTabBarClass			db "AWB_TabBar",0
 szTabClose			db "x",0
-szTabTest			db "main.asm",0			; tab di test - da rimuovere in seguito
-
+szTabCloseMsg			db "Chiudi tab (da implementare)", 0
 
 
 ;
