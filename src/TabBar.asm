@@ -62,6 +62,11 @@ LOCAL	rc:RECT
 LOCAL	hBrush:DWORD
 LOCAL	rcTab:RECT
 LOCAL	nClickX, nClickY:DWORD
+LOCAL	nTabIdx:DWORD
+LOCAL	nTabLeft:DWORD
+LOCAL	bAct:DWORD
+LOCAL	pTitle:DWORD
+LOCAL	pCurItem:DWORD
 
 
 	.IF uMsg == WM_PAINT
@@ -78,13 +83,57 @@ LOCAL	nClickX, nClickY:DWORD
 		invoke	MoveToEx, ps.hdc, 0 ,TABBAR_HEIGHT-1, NULL
 		invoke	LineTo, ps.hdc, rc.right, TABBAR_HEIGHT-1
 
-		; crea il Tab di test
-		mov	rcTab.left, 0
-		mov	rcTab.top, 0
-		mov	rcTab.right, 120
-		mov	rcTab.bottom, TABBAR_HEIGHT-1
-		invoke	TabBar_DrawTab, ps.hdc, ADDR rcTab, ADDR szTabTest, 1, 1
+		; aggiunge un tab iniziale di test
+		mov	nTabIdx, 0
+		mov	nTabLeft, 0
 
+TabBar_Paint_Loop:
+		mov	eax, nTabIdx
+		cmp	eax, g_nTabCount
+		jge	TabBar_Paint_Done
+		
+		; calcola RECT della tab corrente
+		mov	eax, nTabLeft
+		mov	rcTab.left, eax
+		mov	rcTab.top, 0
+		add	eax, 120			; larghezza della tab = 120px
+		mov	rcTab.right, eax
+		mov	rcTab.bottom, TABBAR_HEIGHT-1
+
+		; calcola puntatore a TABITEM corrente
+		mov	eax, nTabIdx
+		mov	ecx, sizeof TABITEM
+		mul	ecx
+		add	eax, offset g_TabItems		
+		mov	pCurItem, eax
+
+		; bActive = 1 se indice corrente == g_nActiveTab
+		mov	eax, nTabIdx
+		mov	ecx, g_nActiveTab
+		xor	edx, edx
+		cmp	eax, ecx
+		sete	dl
+		mov	bAct, edx
+
+		; punta al titolo (szTitle = dopo szFilePath = MAX_PATH in byte)
+		mov	eax, pCurItem
+		add	eax, MAX_PATH
+		mov	pTitle, eax
+
+		; leggi bModified dalla struttura
+		mov	eax, pCurItem
+		mov	ecx, (TABITEM PTR [eax]).bModified
+
+		invoke TabBar_DrawTab, ps.hdc, ADDR rcTab, pTitle, bAct, ecx
+	
+		; avanza alla twab successiva
+		mov	eax, rcTab.right
+		mov	nTabLeft, eax
+		inc	nTabIdx
+		jmp	TabBar_Paint_Loop
+
+TabBar_Paint_Done:
+		
 		invoke	EndPaint, hWnd, ADDR ps
 		xor	eax, eax
 		ret	
@@ -231,3 +280,81 @@ LOCAL	nDotX2:DWORD
 	
 	ret
 TabBar_DrawTab	endp
+
+;
+; TabBar_AddTab
+;
+; Aggiunge una nuova tab all'array g_TabItems
+;
+; In:	pszFilePath 	= puntatore al path (NULL se nuovo file)
+;	pszTitle	= puntatore al titolo da mostrare
+;	bNew		= 1 se file nuovo mai salvato
+;
+; Out:	eax	= indice della vuova tab / -1 se array pieno
+;
+TabBar_AddTab proc pszFilePath:DWORD, pszTitle:DWORD, bNew:DWORD
+LOCAL	nIdx:DWORD
+LOCAL	pItem:DWORD
+
+	; controllo che l'array non sia pieno
+	mov	eax, g_nTabCount
+	cmp	eax, MAX_TABS
+	jge	TabBar_AddrTab_Full
+
+	; calcola puntatore all'elemento dell'array
+	mov	nIdx, eax
+	mov	ecx, sizeof TABITEM
+	mul	ecx				; eax = nIdx * sizeof TABITEM
+	add	eax, offset g_TabItems		; eax = offset g_TabItems[nIdx]
+	mov	pItem, eax
+
+	; azzera la struttura del nuovo tab
+	mov	esi, pszTitle
+	mov	edi, pItem
+	add  	edi, MAX_PATH      ; szTitle è dopo szFilePath (MAX_PATH = 260 bytes)
+	mov	ecx, 255
+TabBar_AddrTab_CopyTitle:
+	lodsb
+	stosb
+	test	al,al
+	jz	TabBar_AddTab_TitleDone
+	loop	TabBar_AddrTab_CopyTitle
+TabBar_AddTab_TitleDone:
+
+	; copia il path se diverso da NULL
+	mov	eax, pszFilePath
+	test	eax, eax
+	jz	TabBar_AddTab_NoPath
+	mov	esi, pszFilePath
+	mov	edi, pItem			; punta a szFilePath (primo campo)
+	mov	ecx, MAX_PATH-1
+TabBar_AddrTab_CopyPath:
+	lodsb
+	stosb
+	test	al, al
+	jz	Tab_AddrTab_PathDone
+	loop	TabBar_AddrTab_CopyPath
+Tab_AddrTab_PathDone:
+TabBar_AddTab_NoPath:
+
+	; imposta bNew e bModified
+	mov	edi, pItem
+	mov	eax, bNew
+	mov	(TABITEM PTR [edi]).bNew, eax
+	mov	(TABITEM PTR [edi]).bModified, 0
+
+	; aggiorna contatore e imposta come tab attiva
+	mov	eax, nIdx
+	mov	g_nActiveTab, eax
+	inc	g_nTabCount
+
+	; ridisegna la tabbar
+	invoke	InvalidateRect, g_hTabBar, NULL, TRUE
+
+	mov	eax,nIdx
+	ret
+
+TabBar_AddrTab_Full:
+	mov	eax, -1
+	ret
+TabBar_AddTab endp

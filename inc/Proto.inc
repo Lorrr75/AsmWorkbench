@@ -9,3 +9,4 @@ TabBar_RegisterClass	proto
 TabBar_Create		proto :DWORD
 TabBar_WndProc		proto :DWORD, :DWORD, :DWORD, :DWORD
 TabBar_DrawTab		proto :DWORD, :DWORD, :DWORD, :DWORD, :DWORD
+TabBar_AddTab 		proto :DWORD, :DWORD, :DWORD

@@ -23,6 +23,7 @@ LOCAL	aParts[3]:DWORD			; numero di parti della StatusBar
 	je 	InitIde_Error		; si, vai a comunicarlo
 
 
+	invoke 	TabBar_AddTab, NULL, offset szTabTest, 1
 
 	; ora creaiamo la StatusBar
 	invoke CreateWindowEx, NULL, ADDR szStatusBarClass, NULL, WS_CHILD or WS_VISIBLE or SBARS_SIZEGRIP,

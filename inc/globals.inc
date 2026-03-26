@@ -14,4 +14,7 @@ g_hStatusBar		HWND ?			; handle della status bar
 g_hTabBar		HWND ?			; handle della TabBar
 g_nTabCount		dd ?			; numero di tab attualmente aperte
 g_nActiveTab		dd ?			; indice tab attiva
+
+
+.data
 g_TabItems		TABITEM MAX_TABS dup (<>)	; array di tutte le tab
