@@ -5,10 +5,11 @@
 
 IDC_STATUSBAR		equ 100
 IDC_TABBAR		equ 101
+IDC_EDITOR		equ 102
 
 
 TABBAR_HEIGHT		equ 28
-
+STATUSBAR_HEIGHT	equ 22
 
 ; valori provvisori del tema Light
 TAB_COLOR_BG		equ 00f0f0f0h		; sfondo grigio chiaro della TabBar
@@ -33,6 +34,10 @@ szStatusNoFile			db "Nessun File",0		; testo iniziale della creazione della Stat
 szTabBarClass			db "AWB_TabBar",0
 szTabClose			db "x",0
 szTabTest			db "main.asm",0			; tab di test - da rimuovere in seguito
+
+; dati per l'Editor
+szMsfteditDll			db "Msftedit.dll",0
+szRichEdit41Class		db "RICHEDIT50W",0
 
 
 ;

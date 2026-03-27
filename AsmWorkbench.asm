@@ -39,9 +39,8 @@ include src\WinMain.asm			; corpo principale del programma
 include src\MainWndProc.asm		; funzione callback gestione messaggi finestra principale
 include src\RegisterWindowMainClass.asm	; funzione registrazione classe della finestra
 include src\InitIde.asm			; funzione di inizializzazione 
-;include src\DeInitIde.asm			; funzione di cancellazione dai inizializzati
-include src\TabBar.asm			; funzione riguardanti la Tab Bar
-
+include src\TabBar.asm			; funzioni riguardanti la Tab Bar
+include src\Editor.asm			; funzioni riguardanti l'editor di testo
 
 ; qui indichiamo la fine del file con il punto d'ingresso del programma
 end	main

@@ -11,3 +11,7 @@ TabBar_WndProc		proto :DWORD, :DWORD, :DWORD, :DWORD
 TabBar_DrawTab		proto :DWORD, :DWORD, :DWORD, :DWORD, :DWORD
 TabBar_AddTab 		proto :DWORD, :DWORD, :DWORD
 TabBar_RemoveTab	proto :DWORD
+
+Editor_Init    	 	proto
+Editor_Create   	proto :DWORD
+Editor_Resize   	proto :DWORD, :DWORD

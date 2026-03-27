@@ -11,6 +11,16 @@
 InitIde	proc hWnd:DWORD
 LOCAL	aParts[3]:DWORD			; numero di parti della StatusBar
 
+	; carica Msftedit.dll
+	invoke	Editor_Init
+	cmp	eax, 0
+	je	InitIde_Error
+
+	; crea il RichEdit
+	invoke	Editor_Create, hWnd
+	cmp	eax, 0
+	je	InitIde_Error
+
 	; Partimamo con la creazione della TabBar
 	invoke	TabBar_RegisterClass
 	cmp	eax, 0			; ci sono stati degli errori?

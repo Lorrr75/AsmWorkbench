@@ -40,6 +40,9 @@ LOCAL	nHeight:DWORD
 		; posiziona la TabBar in cina alla finestra
 		invoke	MoveWindow, g_hTabBar, 0, 0, ecx, TABBAR_HEIGHT, TRUE
 
+		; ridimensiona la finestra di editor
+		invoke Editor_Resize, nWidth, nHeight
+
 		; posiziona StatusBar in fondo alla finestra (ha già la proprietà di auto ridimensionarsi con SBAR_SIZEGRIP)
 		invoke	SendMessage, g_hStatusBar, WM_SIZE, 0, 0
 			
