@@ -25,6 +25,15 @@ LOCAL	aParts[3]:DWORD			; numero di parti della StatusBar
 
 	invoke 	TabBar_AddTab, NULL, offset szTabTest, 1
 
+	invoke 	TabBar_AddTab, NULL, offset szTabTest, 1
+
+
+	invoke 	TabBar_AddTab, NULL, offset szTabTest, 1
+
+
+	invoke 	TabBar_AddTab, NULL, offset szTabTest, 1
+
+
 	; ora creaiamo la StatusBar
 	invoke CreateWindowEx, NULL, ADDR szStatusBarClass, NULL, WS_CHILD or WS_VISIBLE or SBARS_SIZEGRIP,
 				0, 0, 0, 0, hWnd, IDC_STATUSBAR, hInstance, NULL

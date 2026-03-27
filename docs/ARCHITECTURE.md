@@ -1,7 +1,7 @@
 # AsmWorkbench — Documento di Architettura
 
-> Versione: 1.3  
-> Stato: Sviluppo in corso  
+> Versione: 1.4  
+> Stato: Sviluppo in corso — Step 3 completato  
 > Lingua: Italiano (versione inglese prevista)  
 > Licenza: EUPL v1.2
 
@@ -114,7 +114,7 @@ AsmWorkbench/
 │   ├── MainWndProc.asm     ← WndProc — gestione messaggi finestra principale
 │   ├── RegisterWindowMainClass.asm ← Registrazione classe finestra principale
 │   ├── InitIde.asm         ← Creazione e init di tutti i componenti (WM_CREATE)
-│   ├── TabBar.asm          ← Tab bar custom owner-draw              ← IN CORSO
+│   ├── TabBar.asm          ← Tab bar custom owner-draw              ✅ COMPLETATO
 │   ├── DeInitIde.asm       ← Pulizia risorse (WM_DESTROY)          [futuro]
 │   ├── Editor.asm          ← Wrapper RichEdit                       [futuro]
 │   ├── Syntax.asm          ← Syntax highlighting + validazione      [futuro]
@@ -283,44 +283,40 @@ AsmWorkbench/
 
 Definite in `inc/structs.inc`:
 
-```asm
-MAX_DOCS    equ 32
+```nasm
+MAX_TABS    equ 32
 
 ;---------------------------------------------------
 ; Documento aperto in una tab
 ;---------------------------------------------------
-DOCUMENT struct
+TABITEM struct
     szFilePath   db  MAX_PATH dup(0)  ; path completo su disco
     szTitle      db  256 dup(0)       ; nome visualizzato nella tab
-    hRichEdit    dd  0                 ; handle controllo RichEdit
+    hRichEdit    dd  0                 ; handle RichEdit (futuro)
     bModified    dd  0                 ; 0 = pulito / 1 = modificato (●)
     bNew         dd  0                 ; 1 = mai salvato su disco
-    nCurLine     dd  0                 ; riga cursore corrente (1-based)
-    nCurCol      dd  0                 ; colonna cursore corrente (1-based)
-    nTabSize     dd  4                 ; dimensione tab (default 4)
-    nScrollPos   dd  0                 ; posizione scroll salvata
-    nEncoding    dd  0                 ; 0=ANSI, 1=UTF-8
-DOCUMENT ends
+    hScrollPos   dd  0                 ; posizione scroll salvata
+TABITEM ends
 
 ;---------------------------------------------------
-; Progetto corrente — file .awb
+; Progetto corrente — file .awb (futuro)
 ;---------------------------------------------------
 PROJECT struct
     szName       db  256 dup(0)
     szRootPath   db  MAX_PATH dup(0)
     szMainFile   db  MAX_PATH dup(0)
     nDocCount    dd  0
-    hDocs        dd  MAX_DOCS dup(0)
+    hDocs        dd  MAX_TABS dup(0)
 PROJECT ends
 
 ;---------------------------------------------------
-; Risultato di ricerca nel progetto
+; Risultato di ricerca nel progetto (futuro)
 ;---------------------------------------------------
 SEARCHRESULT struct
-    szFilePath   db  MAX_PATH dup(0)  ; file contenente la corrispondenza
-    nLine        dd  0                 ; riga (1-based)
-    nCol         dd  0                 ; colonna (1-based)
-    szContext    db  256 dup(0)        ; testo della riga (per anteprima)
+    szFilePath   db  MAX_PATH dup(0)
+    nLine        dd  0
+    nCol         dd  0
+    szContext    db  256 dup(0)
 SEARCHRESULT ends
 
 ;---------------------------------------------------
@@ -933,7 +929,7 @@ NomeModulo_NomeProcedura endp
 |:----:|--------|-----------|:-----:|
 | 1 | `AsmWorkbench.asm` + `WinMain.asm` + `RegisterWindowMainClass.asm` | Finestra principale funzionante | ✅ |
 | 2 | `InitIde.asm` — StatusBar | StatusBar con 3 sezioni e testi | ✅ |
-| 3 | `TabBar.asm` | Tab bar custom owner-draw con ● e × | 🔄 |
+| 3 | `TabBar.asm` | Tab bar custom owner-draw con ● e × | ✅ |
 | 4 | `Editor.asm` | RichEdit 4.1 embedded con gestione resize | ⬜ |
 | 5 | `FileMgr.asm` | New / Open / Save / Save As / Save All | ⬜ |
 | 6 | `Theme.asm` + `theme.inc` | Sistema temi Light / Dark / Custom | ⬜ |
@@ -978,4 +974,4 @@ Testo completo: [https://eupl.eu/1.2/it/](https://eupl.eu/1.2/it/)
 
 ---
 
-*Documento aggiornato: 2026 — AsmWorkbench è in sviluppo attivo — Step 1✅ 2✅ 3🔄*
+*Documento aggiornato: 2026 — AsmWorkbench è in sviluppo attivo — Step 1✅ 2✅ 3✅*

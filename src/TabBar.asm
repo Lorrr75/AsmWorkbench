@@ -146,26 +146,108 @@ TabBar_Paint_Done:
 		shr	eax, 16			; Y del click
 		mov	nClickY, eax
 
-		; controlla la zona della X
-		; ora lo fa sull'unica presente il tab di test
-		; quando avremo la sita di tab dinamica itereremo su tutte
+		; itera su tutte le tab per trovare quella cliccata
+		mov	nTabIdx, 0
+		mov	nTabLeft, 0
+
+TabBar_HitTest_Loop:
+		mov	eax, nTabIdx
+		cmp	eax, g_nTabCount
+		jge	TabBar_HitTest_Done
+
+		; calcola lato destro della tab corrente
+		mov	eax, nTabLeft
+		add	eax, 120		; larghezza della tab
+		
+		; il click è dentro questa tab?
 		mov	ecx, nClickX
-		cmp	ecx, 102		; 120 - 18 = 102 zona della X
-		jl	TabBar_LBDown_notClose
-		cmp	ecx, 116		; 120 - 4 = 116 zona della X
-		jg	TabBar_LBDown_notClose 
+		cmp	ecx, nTabLeft
+		jl	TabBar_HitTest_Next
+		cmp	ecx, eax
+		jge	TabBar_HitTest_Next
+
+		; click dentro questa tab - è sulla 'X'?
+		mov	edx, eax
+		sub	edx, 18			; X.left = tab.right - 18
+		cmp	ecx, edx
+		jl	TabBar_HitTest_Activate
+
+		mov	edx, eax
+		sub	edx, 4			; X.left = tab.right - 4
+		cmp	ecx, edx
+		jge	TabBar_HitTest_Activate
 
 		mov	ecx, nClickY
-		cmp	ecx, 4			; zona della X
-		jl	TabBar_LBDown_notClose
-		cmp	ecx, 20			; zona della X
-		jg	TabBar_LBDown_notClose 
-		
-		; se giunto fino a qui hai cliccato sulla X e mostra solo un messaggio
-		invoke	MessageBox, hWnd, ADDR szTabCloseMsg, ADDR szCaptionWarning, MB_OK
-TabBar_LBDown_notClose:
+		cmp	ecx, 4
+		jl 	TabBar_HitTest_Activate
+		cmp	ecx, 20
+		jg	TabBar_HitTest_Activate
+
+		; click sulla X - rimuovi la tab
+		invoke	TabBar_RemoveTab, nTabIdx
+		jmp	TabBar_HitTest_Done
+
+TabBar_HitTest_Activate:
+		; click sul corpo - attiva la tab
+		mov	eax, nTabIdx
+		mov	g_nActiveTab, eax
+		invoke	InvalidateRect, g_hTabBar, NULL, TRUE
+		jmp	TabBar_HitTest_Done	
+
+TabBar_HitTest_Next:
+		mov	eax, nTabLeft
+		add	eax, 120
+		mov	nTabLeft, eax
+		inc	nTabIdx
+		jmp	TabBar_HitTest_Loop
+
+TabBar_HitTest_Done:
 		xor	eax, eax
 		ret
+	.ELSEIF uMsg == WM_MBUTTONDOWN
+		
+		; estrae le coordinate del click da lParam
+		mov	eax, lParam
+		movzx	ecx, ax
+		mov	nClickX, ecx
+		shr	eax, 16
+		mov	nClickY, eax
+
+		; itera su tutte le tab per trovare quella cliccata
+		mov	nTabIdx, 0
+		mov	nTabLeft, 0
+
+TabBar_MHitTest_Loop:
+		mov	eax, nTabIdx
+		cmp	eax, g_nTabCount
+		jge	TabBar_MHitTest_Done
+
+		; carola il right della tab corrente
+		mov	eax, nTabLeft
+		add	eax, 120
+		
+		; il click è dentro questa tab?
+		mov	ecx, nClickX
+		cmp	ecx, nTabLeft
+		jl	TabBar_MHitTest_Next
+		cmp	ecx, eax
+		jge	TabBar_MHitTest_Next
+
+		; click dentro questa tab - rimuovila
+		invoke	TabBar_RemoveTab, nTabIdx
+		jmp	TabBar_MHitTest_Done
+
+TabBar_MHitTest_Next:
+		mov	eax, nTabLeft
+		add	eax, 120
+		mov	nTabLeft, eax
+		inc	nTabIdx
+		jmp	TabBar_MHitTest_Loop
+
+TabBar_MHitTest_Done:
+		xor	eax, eax
+		ret
+
 	.ELSEIF
 		invoke	DefWindowProc, hWnd, uMsg, wParam, lParam
 		ret
@@ -358,3 +440,78 @@ TabBar_AddrTab_Full:
 	mov	eax, -1
 	ret
 TabBar_AddTab endp
+
+;
+; TabBar_RemoveTab
+;
+; Rimuove una ab dall'array g_tabItems
+;
+; In: 	nIdx = indice della tab da rimuovere
+;
+; Out:	eax = 1 successo / 0 errore
+;
+TabBar_RemoveTab proc nIdx:DWORD
+	; controlla validità dell'indice
+	mov	eax, nIdx
+	cmp	eax, 0
+	jl	TabBar_RemoveTab_Error
+	cmp	eax, g_nTabCount
+	jge	TabBar_RemoveTab_Error
+
+	; se è l'ultima tab rimasta non chiudiamo
+	cmp	g_nTabCount, 1
+	jle	TabBar_RemoveTab_Error
+	
+	; sposta tutti gli elementi successivi di una posizione verso sinistra
+	mov	eax, nIdx
+	mov	ecx, g_nTabCount
+	dec	ecx				; ultimo indice valido
+	cmp	eax, ecx
+	jge	TabBar_RemoveTab_Skip		; era già l'ultima non spostiamo nulla
+	
+TabBar_RemoveTab_Shift:
+	; copia g_TabItems[i] = g_TabItems[i+1]
+	mov	eax, nIdx
+	mov	ecx, sizeof TABITEM
+
+	; calcola src = &g_tabItems[nIdx+1]
+	mov	edx, eax
+	inc	edx
+	push	eax
+	mov	eax, edx
+	mul	ecx
+	add	eax, offset g_TabItems
+	mov	esi, eax			; esi = src
+
+	; calcola dst = &g_tabItems[nIdx]
+	pop	eax
+	mul	ecx
+	add	eax, offset g_TabItems
+	mov	edi, eax			; edi = dst
+
+	mov	ecx, sizeof TABITEM
+	rep	movsb
+
+	inc	nIdx
+	mov	eax, nIdx
+	cmp	eax, g_nTabCount
+	jl	TabBar_RemoveTab_Shift
+
+TabBar_RemoveTab_Skip:
+	; decrementa il contatore
+	dec	g_nTabCount
+	
+	; aggiusta tab attiva se necessario
+	mov	eax, g_nActiveTab
+	cmp	eax, g_nTabCount
+	jl	TabBar_RemoveTab_OK
+	dec	g_nActiveTab
+
+TabBar_RemoveTab_OK:
+	invoke	InvalidateRect, g_hTabBar, NULL, TRUE
+	mov	eax, 1
+	ret
+
+TabBar_RemoveTab_Error:
+	ret
+TabBar_RemoveTab endp
