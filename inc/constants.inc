@@ -38,6 +38,7 @@ szTabTest			db "main.asm",0			; tab di test - da rimuovere in seguito
 ; dati per l'Editor
 szMsfteditDll			db "Msftedit.dll",0
 szRichEdit41Class		db "RICHEDIT50W",0
+szEditorFont			db "Currier New", 0
 
 
 ;

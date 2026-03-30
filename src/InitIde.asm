@@ -21,6 +21,8 @@ LOCAL	aParts[3]:DWORD			; numero di parti della StatusBar
 	cmp	eax, 0
 	je	InitIde_Error
 
+	invoke	Editor_SetDefaultSettings
+
 	; Partimamo con la creazione della TabBar
 	invoke	TabBar_RegisterClass
 	cmp	eax, 0			; ci sono stati degli errori?

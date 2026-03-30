@@ -77,3 +77,41 @@ LOCAL	nEditorHeight:DWORD
 	invoke	MoveWindow, g_hEditor, 0, nTop, nWidth, nEditorHeight, TRUE
 	ret
 Editor_Resize	endp
+
+;
+; Editor_SetDefaultSettings
+;
+; Imposta font e impostazioni base del RichEdit
+;
+; In:	nessuno (usa g_hEditor)
+;
+Editor_SetDefaultSettings	proc
+LOCAL	cf:CHARFORMAT2
+LOCAL	nTabStop:DWORD
+
+	; azzera la struttura
+	mov	ecx, sizeof CHARFORMAT2
+	lea	edi, cf
+	xor	eax, eax
+	rep	stosb
+
+	; imposta il font di default - Currier New 10 pt
+	mov	cf.cbSize, sizeof CHARFORMAT2
+	mov	cf.dwMask, CFM_FACE or CFM_SIZE or CFM_CHARSET
+	mov	cf.yHeight, 200				; 10pt = 200 twips ( 1pt = 20 twips)
+	mov	cf.bCharSet, ANSI_CHARSET	
+
+	; copia il nnome del font nella sgtruttura
+	invoke	lstrcpy, ADDR cf.szFaceName, ADDR szEditorFont
+	
+	invoke	SendMessage, g_hEditor, EM_SETCHARFORMAT, SCF_ALL, ADDR cf
+
+	; imposta tab stop a 4 caratteri (in twips: 4 * 240 = 960)
+	mov	nTabStop, 960
+	invoke	SendMessage, g_hEditor, EM_SETTABSTOPS, 1, ADDR nTabStop
+
+	; disabilita il drag and drop di testo interno (più semplice da gestire)
+	invoke	SendMessage, g_hEditor, EM_SETOPTIONS, ECOOP_OR, ECO_NOHIDESEL
+
+	ret
+Editor_SetDefaultSettings	endp
