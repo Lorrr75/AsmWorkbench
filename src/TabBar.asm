@@ -96,6 +96,8 @@ TabBar_Paint_Loop:
 		mov	eax, nTabLeft
 		mov	rcTab.left, eax
 		mov	rcTab.top, 0
+		; TODO: calcolare larghezza tab in base alla lunghezza del titolo
+		; per ora larghezza fissa a 120px
 		add	eax, 120			; larghezza della tab = 120px
 		mov	rcTab.right, eax
 		mov	rcTab.bottom, TABBAR_HEIGHT-1

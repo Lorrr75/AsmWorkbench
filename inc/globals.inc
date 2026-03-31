@@ -9,6 +9,7 @@ g_hMainWnd		HWND ?			; handle della finestra principale
 hInstance    		HINSTANCE ?		; istanza del programma principale
 CommandLine  		LPSTR ?			; puntatore alla linea di comando del programma
 g_hStatusBar		HWND ?			; handle della status bar
+g_hAccel		HANDLE ?		; handle acceleratori da tastiera
 
 ; TabBar
 g_hTabBar		HWND ?			; handle della TabBar

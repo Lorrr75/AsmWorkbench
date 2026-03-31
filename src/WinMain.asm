@@ -4,8 +4,9 @@
 ; programma di inzizializzazione, ciclo principale, pulizia dati e uscita
 ;
 WinMain proc hInst:DWORD, hPrevInst:DWORD, szCmdLine:DWORD, nCmdShow:DWORD
-local	wc:WNDCLASSEX				;crea variabili locali sullo stack
-local	msg:MSG
+LOCAL	wc:WNDCLASSEX				;crea variabili locali sullo stack
+LOCAL	msg:MSG
+LOCAL	acc[3]:ACCEL
 
 	; chiama la registrazione della classe della finestra principale
 	invoke	RegisterWindowMainClass
@@ -45,13 +46,30 @@ CreateWindowEx_OK:
 ;	invoke	Theme_Load, THEME_LIGHT				; carica il tema LIGHT per default
 ;	invoke	Updater_CheckAsync				; thread controllo aggiornamenti
 
+	mov	acc[0].fVirt, FVIRTKEY or FCONTROL
+	mov	acc[0].key, 'N'
+	mov	acc[0].cmd, IDM_FILE_NEW
+	
+	mov	acc[6].fVirt, FVIRTKEY or FCONTROL
+	mov	acc[6].key, 'O'
+	mov	acc[6].cmd, IDM_FILE_OPEN
+
+	mov	acc[12].fVirt, FVIRTKEY or FCONTROL
+	mov	acc[12].key, 'S'
+	mov	acc[12].cmd, IDM_FILE_SAVE
+
+	invoke	CreateAcceleratorTable, ADDR acc, 3
+	mov	g_hAccel, eax
 
 	;ciclo principale messaggi
 	.WHILE TRUE
 		invoke	GetMessage, ADDR msg, NULL, 0, 0	; preleva messaggio
 		.BREAK .IF (!eax)				; se no eax interrompi ed esci
-		invoke	TranslateMessage, ADDR msg		; traduce messaggio
-		invoke	DispatchMessage, ADDR msg		; smista messaggio
+		invoke 	TranslateAccelerator, g_hMainWnd, g_hAccel, ADDR msg
+		.IF eax == 0
+			invoke	TranslateMessage, ADDR msg		; traduce messaggio
+			invoke	DispatchMessage, ADDR msg		; smista messaggio
+		.ENDIF
 	.ENDW
 
 	mov	eax, msg.wParam					; restituiamo messaggio paramentri ultimo messaggio ricevuto

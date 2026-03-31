@@ -16,3 +16,11 @@ Editor_Init    	 		proto
 Editor_Create   		proto :DWORD
 Editor_Resize   		proto :DWORD, :DWORD
 Editor_SetDefaultSettings 	proto
+
+FileMgr_New			proto
+FileMgr_Open			proto
+FileMgr_LoadFile		proto :DWORD
+FileMgr_Save      		proto
+FileMgr_SaveAs    		proto
+FileMgr_WriteFile 		proto :DWORD
+

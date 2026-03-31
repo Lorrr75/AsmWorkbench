@@ -25,7 +25,16 @@ LOCAL	nHeight:DWORD
 		ret
 		
 	.ELSEIF uMsg == WM_COMMAND			; messaggio comandi della finestra
-	
+		mov	eax, wParam
+		and	eax, 0FFFFh			; PRENDI SOLO IL LOW WORD (id COMANDO)
+
+		.IF	eax == IDM_FILE_NEW
+			invoke	FileMgr_New
+		.ELSEIF eax == IDM_FILE_OPEN
+			invoke	FileMgr_Open
+		.ELSEIF eax == IDM_FILE_SAVE
+			invoke	FileMgr_Save
+		.ENDIF
 	.ELSEIF uMsg == WM_CLOSE
 		invoke	DestroyWindow, hWnd
 

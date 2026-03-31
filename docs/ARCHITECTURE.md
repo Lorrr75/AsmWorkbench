@@ -1,7 +1,7 @@
 # AsmWorkbench — Documento di Architettura
 
-> Versione: 1.4  
-> Stato: Sviluppo in corso — Step 3 completato  
+> Versione: 1.5  
+> Stato: Sviluppo in corso — Step 5 completato  
 > Lingua: Italiano (versione inglese prevista)  
 > Licenza: EUPL v1.2
 
@@ -116,12 +116,12 @@ AsmWorkbench/
 │   ├── InitIde.asm         ← Creazione e init di tutti i componenti (WM_CREATE)
 │   ├── TabBar.asm          ← Tab bar custom owner-draw              ✅ COMPLETATO
 │   ├── DeInitIde.asm       ← Pulizia risorse (WM_DESTROY)          [futuro]
-│   ├── Editor.asm          ← Wrapper RichEdit                       [futuro]
+│   ├── Editor.asm          ← Wrapper RichEdit 4.1                  ✅ COMPLETATO
 │   ├── Syntax.asm          ← Syntax highlighting + validazione      [futuro]
 │   ├── IndentGuide.asm     ← Linee guida indentazione blocchi       [futuro]
 │   ├── Search.asm          ← Ricerca file corrente e progetto       [futuro]
 │   ├── Toolbar.asm         ← Toolbar icone sotto il menu            [futuro]
-│   ├── FileMgr.asm         ← Gestione file (open/save/dialogs)      [futuro]
+│   ├── FileMgr.asm         ← New / Open / Save / SaveAs             ✅ COMPLETATO
 │   ├── Project.asm         ← Gestione progetto .awb                 [futuro]
 │   ├── PanelMgr.asm        ← Layout pannelli ridimensionabili       [futuro]
 │   ├── Config.asm          ← Configurazione (file INI)              [futuro]
@@ -188,12 +188,13 @@ AsmWorkbench/
 - Supporta click sinistro (attiva) e click centrale (chiude)
 - Gestisce l'overflow con frecce di scorrimento
 
-### `editor.asm` — Wrapper RichEdit
-- Crea e gestisce il controllo RichEdit 4.1 (`Msftedit.dll`)
-- Espone funzioni di alto livello: `GetCurrentLine`, `GetCurrentCol`, `GetText`, `SetText`
-- Intercetta `EN_CHANGE` per notificare `syntax.asm` e `indentguide.asm`
-- Gestisce il flag `bModified` del documento corrente
-- Imposta colori di sfondo e testo dal tema attivo
+### `Editor.asm` — Wrapper RichEdit ✅
+- Carica `Msftedit.dll` e crea il controllo RichEdit 4.1
+- `Editor_Init` — carica la DLL
+- `Editor_Create` — crea il controllo con stili corretti
+- `Editor_Resize` — ridimensiona in base alla finestra (sotto TabBar, sopra StatusBar)
+- `Editor_SetDefaultSettings` — font Courier New 10pt, tab stop 4 caratteri
+- Notifiche `EN_CHANGE` e `EN_SELCHANGE` attive per futuri moduli
 
 ### `syntax.asm` — Syntax highlighting + validazione
 - **Passaggio 1 — Colorazione**: colora i token riconosciuti con i colori del tema
@@ -236,10 +237,15 @@ AsmWorkbench/
 - Mostra notifica aggiornamento disponibile nella sezione destra (discreta, cliccabile)
 - Si aggiorna ad ogni movimento del cursore via `EN_SELCHANGE`
 
-### `filemgr.asm` — Gestione file
-- Implementa: Nuovo, Apri, Salva, Salva con nome, Chiudi, Salva tutto
-- Gestisce i dialog standard (`GetOpenFileName`, `GetSaveFileName`)
-- Controlla `bModified` prima di chiudere o sovrascrivere
+### `FileMgr.asm` — Gestione file ✅
+- `FileMgr_New` — crea documento vuoto con titolo "Senza nome N" e aggiunge la tab
+- `FileMgr_Open` — dialog apertura file, carica contenuto nel RichEdit
+- `FileMgr_LoadFile` — legge file da disco e lo invia al RichEdit
+- `FileMgr_Save` — salva su path esistente o chiama SaveAs se nuovo
+- `FileMgr_SaveAs` — dialog salvataggio, aggiorna path e titolo tab
+- `FileMgr_WriteFile` — scrive contenuto RichEdit su disco
+- Acceleratori: `Ctrl+N`, `Ctrl+O`, `Ctrl+S`
+- **TODO**: conversione da UTF-16 a ANSI/UTF-8 prima della scrittura su disco
 
 ### `project.asm` — Gestione progetto
 - Gestisce il file `.awb` (formato INI esteso)
@@ -930,8 +936,8 @@ NomeModulo_NomeProcedura endp
 | 1 | `AsmWorkbench.asm` + `WinMain.asm` + `RegisterWindowMainClass.asm` | Finestra principale funzionante | ✅ |
 | 2 | `InitIde.asm` — StatusBar | StatusBar con 3 sezioni e testi | ✅ |
 | 3 | `TabBar.asm` | Tab bar custom owner-draw con ● e × | ✅ |
-| 4 | `Editor.asm` | RichEdit 4.1 embedded con gestione resize | ⬜ |
-| 5 | `FileMgr.asm` | New / Open / Save / Save As / Save All | ⬜ |
+| 4 | `Editor.asm` | RichEdit 4.1 embedded con gestione resize | ✅ |
+| 5 | `FileMgr.asm` | New / Open / Save / Save As / Save All | ✅ |
 | 6 | `Theme.asm` + `theme.inc` | Sistema temi Light / Dark / Custom | ⬜ |
 | 7 | `Syntax.asm` | Highlighting + sottolineatura ondulata | ⬜ |
 | 8 | `IndentGuide.asm` | Linee guida indentazione blocchi | ⬜ |
@@ -974,4 +980,4 @@ Testo completo: [https://eupl.eu/1.2/it/](https://eupl.eu/1.2/it/)
 
 ---
 
-*Documento aggiornato: 2026 — AsmWorkbench è in sviluppo attivo — Step 1✅ 2✅ 3✅*
+*Documento aggiornato: 2026 — AsmWorkbench è in sviluppo attivo — Step 1✅ 2✅ 3✅ 4✅ 5✅*

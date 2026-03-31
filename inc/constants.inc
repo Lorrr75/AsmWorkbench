@@ -7,6 +7,10 @@ IDC_STATUSBAR		equ 100
 IDC_TABBAR		equ 101
 IDC_EDITOR		equ 102
 
+IDM_FILE_NEW		equ 1001
+IDM_FILE_OPEN		equ 1002
+IDM_FILE_SAVE		equ 1003
+
 
 TABBAR_HEIGHT		equ 28
 STATUSBAR_HEIGHT	equ 22
@@ -33,12 +37,17 @@ szStatusNoFile			db "Nessun File",0		; testo iniziale della creazione della Stat
 ; dati per la TabBar
 szTabBarClass			db "AWB_TabBar",0
 szTabClose			db "x",0
-szTabTest			db "main.asm",0			; tab di test - da rimuovere in seguito
 
 ; dati per l'Editor
 szMsfteditDll			db "Msftedit.dll",0
 szRichEdit41Class		db "RICHEDIT50W",0
 szEditorFont			db "Currier New", 0
+
+; dati per File Manager
+szNewFileTitle			db "Senza nome %d",0
+szFileFilter			db "File Assembly (*.asm)", 0, "*.asm", 0, "Tutti i file (*.*)", 0, "*.*", 0, 0
+szDefExt			db "asm", 0
+
 
 
 ;

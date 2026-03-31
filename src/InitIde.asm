@@ -35,15 +35,8 @@ LOCAL	aParts[3]:DWORD			; numero di parti della StatusBar
 	je 	InitIde_Error		; si, vai a comunicarlo
 
 
-	invoke 	TabBar_AddTab, NULL, offset szTabTest, 1
-
-	invoke 	TabBar_AddTab, NULL, offset szTabTest, 1
-
-
-	invoke 	TabBar_AddTab, NULL, offset szTabTest, 1
-
-
-	invoke 	TabBar_AddTab, NULL, offset szTabTest, 1
+	; apre un nuovo documento vuoto all'avvio
+	invoke	FileMgr_New
 
 
 	; ora creaiamo la StatusBar
