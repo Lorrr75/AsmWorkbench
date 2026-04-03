@@ -23,95 +23,164 @@ Editor_Init_Error:
 Editor_Init endp
 
 ;
-; Editor_Create
+; Editor_ApplySettings
 ;
-; Crea il controllo RichEdit nella finestra principale
+; Applica font e tabstop ad un RichEdit
+;
+; In:	hRE = handle RichEdit
+;
+Editor_ApplySettings proc hRE:DWORD
+LOCAL	cf:CHARFORMAT2
+LOCAL	nTabStop:DWORD
+	
+	; azzera struttura
+	lea	edi, cf
+	mov	ecx, sizeof CHARFORMAT2
+	xor	eax, eax
+	rep	stosb
+
+	mov	cf.cbSize, sizeof CHARFORMAT2
+	mov	cf.dwMask, CFM_FACE or CFM_SIZE or CFM_CHARSET
+	mov	cf.yHeight, 200
+	mov	cf.bCharSet, ANSI_CHARSET
+	invoke	lstrcpy, ADDR cf.szFaceName, ADDR szEditorFont
+	invoke	SendMessage, hRE, EM_SETCHARFORMAT, SCF_ALL, ADDR cf
+
+	; TODO: valore configurabile da Config.asm
+	mov	nTabStop, 32
+	invoke	SendMessage, hRE, EM_SETTABSTOPS, 1, ADDR nTabStop
+
+	invoke	SendMessage, hRE, EM_LIMITTEXT, -1, 0
+	invoke	SendMessage, hRE, EM_SETEVENTMASK, 0, ENM_CHANGE or ENM_SELCHANGE
+	ret
+Editor_ApplySettings endp
+
+;
+; Editor_CreateForTab
+;
+; Crea un RichEdit nascosto per una tab
 ; 
 ; In:	hWndParent = handle della finestra principale
 ;
-; Out:	eax = handle RichEdit / 0 = errore
+; Out: 	eax = handle del RichEdit / 0 = errore
 ;
-Editor_Create	proc hWndParent:DWORD
-	invoke	CreateWindowEx, WS_EX_CLIENTEDGE, ADDR szRichEdit41Class,
-				NULL, WS_CHILD or WS_VISIBLE or WS_VSCROLL or WS_HSCROLL or \
-				ES_MULTILINE or ES_AUTOVSCROLL or ES_AUTOHSCROLL or ES_NOHIDESEL,
-				0, 0, 0, 0, hWndParent, IDC_EDITOR, hInstance, NULL
+Editor_CreateForTab proc hWndParent:DWORD
+LOCAL	hRE:DWORD
+LOCAL	nTop:DWORD
+LOCAL	nH:DWORD
 
-	mov	g_hEditor, eax
+	; calcola posizione e dimensione usando le globali
+	mov	eax, TABBAR_HEIGHT
+	mov	nTop, eax
+	mov	eax, g_nClientH
+	sub	eax, TABBAR_HEIGHT
+	sub 	eax, STATUSBAR_HEIGHT
+	mov	nH, eax
+
+	invoke	CreateWindowEx, WS_EX_CLIENTEDGE, ADDR szRichEdit41Class, NULL,
+				WS_CHILD or WS_VSCROLL or WS_HSCROLL or ES_MULTILINE or \
+				ES_AUTOVSCROLL or ES_AUTOHSCROLL or ES_NOHIDESEL, 0,
+				nTop, g_nClientW, nH, hWndParent, 0, hInstance, NULL
+
 	cmp	eax, 0
-	je	Editor_Create_Error
+	je	Editor_CreateForTab_Error
+	mov	hRE, eax
 
-	;imposta il di testo al massimo
-	invoke 	SendMessage, g_hEditor, EM_SETEVENTMASK, 0, ENM_CHANGE or ENM_SELCHANGE
+	invoke	Editor_ApplySettings, hRE
 
-	mov	eax, g_hEditor
+	; resta nascosto finché Editor_ActivateTab non lo mostrerà
+	mov	eax, hRE
 	ret
 
-Editor_Create_Error:
+Editor_CreateForTab_Error:
 	mov	eax, 0
-	ret				
-Editor_Create	endp
+	ret
+Editor_CreateForTab endp
+
+;
+; Editor_ActivateTab
+;
+; Nasconde tutti i RichEdit, mostra e attiva quello
+; della tab indicata, aggiorna g_hEditor
+;
+; Input: nIdx = indice tab da attivare
+;
+Editor_ActivateTab proc nIdx:DWORD
+LOCAL i:DWORD
+LOCAL pItem:DWORD
+LOCAL hRE:DWORD
+
+	; nasconde tutte le tab
+	mov	i, 0
+Editor_ActivateTab_HideLoop:
+	mov	eax, i
+	cmp	eax, g_nTabCount
+	jge	Editor_Activate_Show
+
+	mov	ecx, sizeof TABITEM
+	mul	ecx
+	add	eax, offset g_TabItems
+	mov	edx, (TABITEM PTR [eax]).hRichEdit
+	test	edx, edx
+	jz	Editor_Activate_HideNext
+	
+	invoke	ShowWindow, edx, SW_HIDE
+
+Editor_Activate_HideNext:
+	inc	i
+	jmp	Editor_ActivateTab_HideLoop
+
+Editor_Activate_Show:
+	; calcola puntatore TABITEM della tab da attivare
+	mov	eax, nIdx
+	mov	ecx, sizeof TABITEM
+	mul 	ecx
+	add	eax, offset g_TabItems	
+	mov	pItem, eax
+
+	; recupera handle RichEdit
+	mov	eax, pItem
+	mov	eax, (TABITEM PTR [eax]).hRichEdit
+	test	eax, eax
+	jz	Editor_Activate_End
+
+	mov	hRE, eax
+	mov	g_hEditor, eax			; aggiorna editor attivo
+
+	;ridimensione con le dimensioni correnti
+	invoke	Editor_Resize, g_nClientW, g_nClientH
+
+	; mostra e porta il focus
+	invoke	ShowWindow, hRE, SW_SHOW
+	invoke	SetFocus, hRE
+
+Editor_Activate_End:
+	ret
+Editor_ActivateTab endp
 
 ;
 ; Editor_Resize
 ;
-; Ridimensiona il RichEdit in base alla finestra
+; Ridimensiona g_hEditor con le dimensioni date
 ;
-; In:	nWidth  = larghezza della finestra
-;	nHeight = altezza finestra
+; In: 	nWidth, nHeight = dimensioni client area
 ;
-Editor_Resize	proc nWidth:DWORD, nHeight:DWORD
-LOCAL	nTop:DWORD
-LOCAL	nEditorHeight:DWORD
+Editor_Resize proc nWidth:DWORD, nHeight:DWORD
+LOCAL nTop:DWORD
+LOCAL nH:DWORD
 
-	; top = subito sotto la TabBar
-	mov	eax, TABBAR_HEIGHT
-	mov	nTop, eax
+    	cmp	g_hEditor, 0
+    	je   	Editor_Resize_End
 
-	; altezza = finestra - TabBar - StatusBar
-	mov	eax, nHeight
-	sub	eax, TABBAR_HEIGHT
-	sub	eax, STATUSBAR_HEIGHT
-	mov	nEditorHeight, eax
+   	mov  	eax, TABBAR_HEIGHT
+   	mov  	nTop, eax
+    	mov  	eax, nHeight
+    	sub  	eax, TABBAR_HEIGHT
+    	sub  	eax, STATUSBAR_HEIGHT
+    	mov  	nH, eax
 
-	invoke	MoveWindow, g_hEditor, 0, nTop, nWidth, nEditorHeight, TRUE
-	ret
-Editor_Resize	endp
+    	invoke 	MoveWindow, g_hEditor, 0, nTop, nWidth, nH, TRUE
 
-;
-; Editor_SetDefaultSettings
-;
-; Imposta font e impostazioni base del RichEdit
-;
-; In:	nessuno (usa g_hEditor)
-;
-Editor_SetDefaultSettings	proc
-LOCAL	cf:CHARFORMAT2
-LOCAL	nTabStop:DWORD
-
-	; azzera la struttura
-	mov	ecx, sizeof CHARFORMAT2
-	lea	edi, cf
-	xor	eax, eax
-	rep	stosb
-
-	; imposta il font di default - Currier New 10 pt
-	mov	cf.cbSize, sizeof CHARFORMAT2
-	mov	cf.dwMask, CFM_FACE or CFM_SIZE or CFM_CHARSET
-	mov	cf.yHeight, 200				; 10pt = 200 twips ( 1pt = 20 twips)
-	mov	cf.bCharSet, ANSI_CHARSET	
-
-	; copia il nnome del font nella sgtruttura
-	invoke	lstrcpy, ADDR cf.szFaceName, ADDR szEditorFont
-	
-	invoke	SendMessage, g_hEditor, EM_SETCHARFORMAT, SCF_ALL, ADDR cf
-
-	; imposta tab stop a 4 caratteri (in twips: 4 * 240 = 960)
-	mov	nTabStop, 960
-	invoke	SendMessage, g_hEditor, EM_SETTABSTOPS, 1, ADDR nTabStop
-
-	; disabilita il drag and drop di testo interno (più semplice da gestire)
-	invoke	SendMessage, g_hEditor, EM_SETOPTIONS, ECOOP_OR, ECO_NOHIDESEL
-
-	ret
-Editor_SetDefaultSettings	endp
+Editor_Resize_End:
+    ret
+Editor_Resize endp

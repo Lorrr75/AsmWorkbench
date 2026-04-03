@@ -12,10 +12,11 @@ TabBar_DrawTab			proto :DWORD, :DWORD, :DWORD, :DWORD, :DWORD
 TabBar_AddTab 			proto :DWORD, :DWORD, :DWORD
 TabBar_RemoveTab		proto :DWORD
 
-Editor_Init    	 		proto
-Editor_Create   		proto :DWORD
-Editor_Resize   		proto :DWORD, :DWORD
-Editor_SetDefaultSettings 	proto
+Editor_Init             	proto
+Editor_ApplySettings    	proto :DWORD
+Editor_CreateForTab     	proto :DWORD
+Editor_ActivateTab      	proto :DWORD
+Editor_Resize           	proto :DWORD, :DWORD
 
 FileMgr_New			proto
 FileMgr_Open			proto

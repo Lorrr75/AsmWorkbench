@@ -16,13 +16,6 @@ LOCAL	aParts[3]:DWORD			; numero di parti della StatusBar
 	cmp	eax, 0
 	je	InitIde_Error
 
-	; crea il RichEdit
-	invoke	Editor_Create, hWnd
-	cmp	eax, 0
-	je	InitIde_Error
-
-	invoke	Editor_SetDefaultSettings
-
 	; Partimamo con la creazione della TabBar
 	invoke	TabBar_RegisterClass
 	cmp	eax, 0			; ci sono stati degli errori?
@@ -33,11 +26,6 @@ LOCAL	aParts[3]:DWORD			; numero di parti della StatusBar
 	mov	g_hTabBar, eax		;salva handle della tab bar
 	cmp	eax, 0			; ci sono stati degli errori?
 	je 	InitIde_Error		; si, vai a comunicarlo
-
-
-	; apre un nuovo documento vuoto all'avvio
-	invoke	FileMgr_New
-
 
 	; ora creaiamo la StatusBar
 	invoke CreateWindowEx, NULL, ADDR szStatusBarClass, NULL, WS_CHILD or WS_VISIBLE or SBARS_SIZEGRIP,

@@ -45,12 +45,14 @@ LOCAL	nHeight:DWORD
 
 		mov	nWidth, ecx			;memorizza valori appena trovati
 		mov	nHeight, eax
+		mov	g_nClientW, ecx			;salva sempre le dimensioni per la creazione della RichEdit
+		mov	g_nClientH, eax
 
 		; posiziona la TabBar in cina alla finestra
 		invoke	MoveWindow, g_hTabBar, 0, 0, ecx, TABBAR_HEIGHT, TRUE
 
 		; ridimensiona la finestra di editor
-		invoke Editor_Resize, nWidth, nHeight
+		invoke 	Editor_Resize, nWidth, nHeight
 
 		; posiziona StatusBar in fondo alla finestra (ha già la proprietà di auto ridimensionarsi con SBAR_SIZEGRIP)
 		invoke	SendMessage, g_hStatusBar, WM_SIZE, 0, 0

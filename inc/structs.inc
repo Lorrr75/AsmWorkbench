@@ -12,4 +12,3 @@ TABITEM	struct
 	bNew		dd 0				; 1 = mai salvato su disco
 	hScrollPos	dd 0				; posizione scroll salvata
 TABITEM ends
-

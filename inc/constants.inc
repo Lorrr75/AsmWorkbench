@@ -39,9 +39,9 @@ szTabBarClass			db "AWB_TabBar",0
 szTabClose			db "x",0
 
 ; dati per l'Editor
-szMsfteditDll			db "Msftedit.dll",0
-szRichEdit41Class		db "RICHEDIT50W",0
-szEditorFont			db "Currier New", 0
+szMsfteditDll			db "riched20.dll",0
+szRichEdit41Class		db "RichEdit20A",0
+szEditorFont			db "Courier New", 0
 
 ; dati per File Manager
 szNewFileTitle			db "Senza nome %d",0

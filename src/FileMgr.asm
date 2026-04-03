@@ -286,20 +286,30 @@ LOCAL	hFile:HANDLE
 LOCAL	dwSize:DWORD
 LOCAL	hMem:HANDLE
 LOCAL	pMem:DWORD
+LOCAL	gtl:GETTEXTLENGTHEX
+LOCAL gte:GETTEXTEX
 
 	; recupera dimensione testo
-	invoke	SendMessage, g_hEditor, WM_GETTEXTLENGTH, 0, 0
-	mov	dwSize, eax
-	inc	eax				; aggiunge spazione per il terminatore
+	mov  gtl.flags,    GTL_DEFAULT
+    	mov  gtl.codepage, CP_ACP
+    	invoke SendMessage, g_hEditor, EM_GETTEXTLENGTHEX, ADDR gtl, 0
+    	mov  dwSize, eax
+    	inc  eax
 
 	; alloca memoria
-	invoke	GlobalAlloc, GMEM_MOVEABLE, eax
+	invoke	GlobalAlloc, GMEM_MOVEABLE or GMEM_ZEROINIT, eax
 	mov	hMem, eax
 	invoke	GlobalLock, hMem
 	mov	pMem, eax
 
 	; legge il testo dal RichEdit
-	invoke	SendMessage, g_hEditor, WM_GETTEXT, dwSize, pMem
+	mov	eax, dwSize
+	mov  	gte.cb,       eax  ; dimensione buffer
+    	mov  	gte.flags,    GT_DEFAULT
+    	mov  	gte.codepage, CP_ACP
+    	mov  	gte.lpDefaultChar,    0
+    	mov  	gte.lpUsedDefChar,    0
+    	invoke 	SendMessage, g_hEditor, EM_GETTEXTEX, ADDR gte, pMem
 
 	; apre / crea il file
 	invoke	CreateFile, pItem, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL

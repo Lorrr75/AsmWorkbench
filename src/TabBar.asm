@@ -190,9 +190,9 @@ TabBar_HitTest_Loop:
 		jmp	TabBar_HitTest_Done
 
 TabBar_HitTest_Activate:
-		; click sul corpo - attiva la tab
 		mov	eax, nTabIdx
 		mov	g_nActiveTab, eax
+		invoke 	Editor_ActivateTab, nTabIdx
 		invoke	InvalidateRect, g_hTabBar, NULL, TRUE
 		jmp	TabBar_HitTest_Done	
 
@@ -432,9 +432,17 @@ TabBar_AddTab_NoPath:
 	mov	g_nActiveTab, eax
 	inc	g_nTabCount
 
-	; ridisegna la tabbar
-	invoke	InvalidateRect, g_hTabBar, NULL, TRUE
+	; crea RichEdit dedicato (e nascosto) per la tab
+	invoke	Editor_CreateForTab, g_hMainWnd
+	mov	ecx, pItem
+	mov	(TABITEM PTR [ecx]).hRichEdit, eax
 
+	; attiva la nuova tab
+	invoke	Editor_ActivateTab, nIdx
+
+	; ridisegna la TabBar
+	invoke	InvalidateRect, g_hTabBar, NULL, TRUE
+	
 	mov	eax,nIdx
 	ret
 
@@ -453,67 +461,86 @@ TabBar_AddTab endp
 ; Out:	eax = 1 successo / 0 errore
 ;
 TabBar_RemoveTab proc nIdx:DWORD
-	; controlla validità dell'indice
-	mov	eax, nIdx
-	cmp	eax, 0
-	jl	TabBar_RemoveTab_Error
-	cmp	eax, g_nTabCount
-	jge	TabBar_RemoveTab_Error
 
-	; se è l'ultima tab rimasta non chiudiamo
-	cmp	g_nTabCount, 1
-	jle	TabBar_RemoveTab_Error
-	
-	; sposta tutti gli elementi successivi di una posizione verso sinistra
-	mov	eax, nIdx
-	mov	ecx, g_nTabCount
-	dec	ecx				; ultimo indice valido
-	cmp	eax, ecx
-	jge	TabBar_RemoveTab_Skip		; era già l'ultima non spostiamo nulla
-	
+    ; indice valido?
+    mov  eax, nIdx
+    cmp  eax, 0
+    jl   TabBar_RemoveTab_Error
+    cmp  eax, g_nTabCount
+    jge  TabBar_RemoveTab_Error
+
+    ; distruggi il RichEdit della tab rimossa
+    mov  ecx, sizeof TABITEM
+    mul  ecx
+    add  eax, offset g_TabItems
+    mov  edx, (TABITEM PTR [eax]).hRichEdit
+    test edx, edx
+    jz   TabBar_RemoveTab_Shift
+    mov  (TABITEM PTR [eax]).hRichEdit, 0
+    invoke DestroyWindow, edx
+
 TabBar_RemoveTab_Shift:
-	; copia g_TabItems[i] = g_TabItems[i+1]
-	mov	eax, nIdx
-	mov	ecx, sizeof TABITEM
+    ; sposta tutti gli elementi successivi di uno verso sinistra
+    mov  eax, nIdx
+    mov  ecx, g_nTabCount
+    dec  ecx
+    cmp  eax, ecx
+    jge  TabBar_RemoveTab_Skip  ; era l'ultima — niente da spostare
 
-	; calcola src = &g_tabItems[nIdx+1]
-	mov	edx, eax
-	inc	edx
-	push	eax
-	mov	eax, edx
-	mul	ecx
-	add	eax, offset g_TabItems
-	mov	esi, eax			; esi = src
+TabBar_RemoveTab_ShiftLoop:
+    mov  eax, nIdx
+    mov  ecx, sizeof TABITEM
 
-	; calcola dst = &g_tabItems[nIdx]
-	pop	eax
-	mul	ecx
-	add	eax, offset g_TabItems
-	mov	edi, eax			; edi = dst
+    ; src = &g_TabItems[nIdx+1]
+    mov  edx, eax
+    inc  edx
+    push eax
+    mov  eax, edx
+    mul  ecx
+    add  eax, offset g_TabItems
+    mov  esi, eax
 
-	mov	ecx, sizeof TABITEM
-	rep	movsb
+    ; dst = &g_TabItems[nIdx]
+    pop  eax
+    mul  ecx
+    add  eax, offset g_TabItems
+    mov  edi, eax
 
-	inc	nIdx
-	mov	eax, nIdx
-	cmp	eax, g_nTabCount
-	jl	TabBar_RemoveTab_Shift
+    mov  ecx, sizeof TABITEM
+    rep  movsb
+
+    inc  nIdx
+    mov  eax, nIdx
+    cmp  eax, g_nTabCount
+    jl   TabBar_RemoveTab_ShiftLoop
 
 TabBar_RemoveTab_Skip:
-	; decrementa il contatore
-	dec	g_nTabCount
-	
-	; aggiusta tab attiva se necessario
-	mov	eax, g_nActiveTab
-	cmp	eax, g_nTabCount
-	jl	TabBar_RemoveTab_OK
-	dec	g_nActiveTab
+    dec  g_nTabCount
+
+    ; se non ci sono più tab azzera tutto
+    cmp  g_nTabCount, 0
+    jne  TabBar_RemoveTab_HasTabs
+    mov  g_nActiveTab, 0
+    mov  g_hEditor, 0
+    invoke InvalidateRect, g_hTabBar, NULL, TRUE
+    mov  eax, 1
+    ret
+
+TabBar_RemoveTab_HasTabs:
+    ; aggiusta indice tab attiva se necessario
+    mov  eax, g_nActiveTab
+    cmp  eax, g_nTabCount
+    jl   TabBar_RemoveTab_OK
+    dec  g_nActiveTab
 
 TabBar_RemoveTab_OK:
-	invoke	InvalidateRect, g_hTabBar, NULL, TRUE
-	mov	eax, 1
-	ret
+    invoke Editor_ActivateTab, g_nActiveTab
+    invoke InvalidateRect, g_hTabBar, NULL, TRUE
+    mov  eax, 1
+    ret
 
 TabBar_RemoveTab_Error:
-	ret
+    mov  eax, 0
+    ret
+
 TabBar_RemoveTab endp

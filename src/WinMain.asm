@@ -7,6 +7,7 @@ WinMain proc hInst:DWORD, hPrevInst:DWORD, szCmdLine:DWORD, nCmdShow:DWORD
 LOCAL	wc:WNDCLASSEX				;crea variabili locali sullo stack
 LOCAL	msg:MSG
 LOCAL	acc[3]:ACCEL
+LOCAL	rc:RECT
 
 	; chiama la registrazione della classe della finestra principale
 	invoke	RegisterWindowMainClass
@@ -42,6 +43,12 @@ CreateWindowEx_OK:
 	invoke	ShowWindow, g_hMainWnd, nCmdShow
 	invoke	UpdateWindow, g_hMainWnd
 	
+	; forza WM_SIZE iniziale + la finestra ora è visibile
+	invoke	GetClientRect, g_hMainWnd, ADDR rc
+	mov	eax, rc.bottom
+	shl	eax, 16
+	or	eax, rc.right
+	invoke	SendMessage, g_hMainWnd, WM_SIZE, SIZE_RESTORED, eax
 
 ;	invoke	Theme_Load, THEME_LIGHT				; carica il tema LIGHT per default
 ;	invoke	Updater_CheckAsync				; thread controllo aggiornamenti

@@ -19,6 +19,8 @@ g_nActiveTab		dd ?			; indice tab attiva
 ; Editor
 g_hEditor		HWND ?			; handle della finestra di edit
 g_hMsftedit		HANDLE ?		; handle del componente RichEdit 4.1 caricato da .DLL
+g_nClientW		dd ?			; larghezza area client aggiornata da WM_SIZE per finestra RichEdit
+g_nClientH		dd ?			; altezza area client aggiornata da WM_SIZE per finestra RichEdit
 
 .data
 g_TabItems		TABITEM MAX_TABS dup (<>)	; array di tutte le tab
