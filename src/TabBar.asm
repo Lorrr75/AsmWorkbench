@@ -67,6 +67,7 @@ LOCAL	nTabLeft:DWORD
 LOCAL	bAct:DWORD
 LOCAL	pTitle:DWORD
 LOCAL	pCurItem:DWORD
+LOCAL 	hDC_hit:DWORD
 
 
 	.IF uMsg == WM_PAINT
@@ -92,24 +93,19 @@ TabBar_Paint_Loop:
 		cmp	eax, g_nTabCount
 		jge	TabBar_Paint_Done
 		
-		; calcola RECT della tab corrente
-		mov	eax, nTabLeft
-		mov	rcTab.left, eax
-		mov	rcTab.top, 0
-		; TODO: calcolare larghezza tab in base alla lunghezza del titolo
-		; per ora larghezza fissa a 120px
-		add	eax, 120			; larghezza della tab = 120px
-		mov	rcTab.right, eax
-		mov	rcTab.bottom, TABBAR_HEIGHT-1
-
-		; calcola puntatore a TABITEM corrente
+		; calcola puntatore a TABITEM
 		mov	eax, nTabIdx
 		mov	ecx, sizeof TABITEM
 		mul	ecx
-		add	eax, offset g_TabItems		
+		add	eax, offset g_TabItems
 		mov	pCurItem, eax
 
-		; bActive = 1 se indice corrente == g_nActiveTab
+		; punta al titolo
+		mov	eax, pCurItem
+		add	eax, MAX_PATH
+		mov	pTitle, eax
+
+		; calcola bActive
 		mov	eax, nTabIdx
 		mov	ecx, g_nActiveTab
 		xor	edx, edx
@@ -117,18 +113,26 @@ TabBar_Paint_Loop:
 		sete	dl
 		mov	bAct, edx
 
-		; punta al titolo (szTitle = dopo szFilePath = MAX_PATH in byte)
-		mov	eax, pCurItem
-		add	eax, MAX_PATH
-		mov	pTitle, eax
-
-		; leggi bModified dalla struttura
+		; calcola larghezza tab
 		mov	eax, pCurItem
 		mov	ecx, (TABITEM PTR [eax]).bModified
+		invoke	TabBar_GetTabWidth, ps.hdc, pTitle, ecx
 
-		invoke TabBar_DrawTab, ps.hdc, ADDR rcTab, pTitle, bAct, ecx
-	
-		; avanza alla twab successiva
+		; costruisce RECT
+		mov	ecx, nTabLeft
+		mov	rcTab.left, ecx
+		mov	rcTab.top, 0
+		add	ecx, eax			; ecx = nTabLeft + larghezza tab
+		mov	rcTab.right, ecx
+		mov	rcTab.bottom, TABBAR_HEIGHT-1
+
+		; legge bModified per DrawTab
+		mov	eax, pCurItem
+		mov	ecx, (TABITEM PTR [eax]).bModified
+		
+		invoke	TabBar_DrawTab, ps.hdc, ADDR rcTab, pTitle, bAct, ecx
+
+		; avanza
 		mov	eax, rcTab.right
 		mov	nTabLeft, eax
 		inc	nTabIdx
@@ -140,6 +144,8 @@ TabBar_Paint_Done:
 		xor	eax, eax
 		ret	
 	.ELSEIF uMsg == WM_LBUTTONDOWN
+		invoke GetDC, hWnd
+        	mov    hDC_hit, eax
 		
 		; estrae le coordinate del click da lParam
 		mov	eax, lParam
@@ -157,10 +163,22 @@ TabBar_HitTest_Loop:
 		cmp	eax, g_nTabCount
 		jge	TabBar_HitTest_Done
 
-		; calcola lato destro della tab corrente
-		mov	eax, nTabLeft
-		add	eax, 120		; larghezza della tab
-		
+		; calcola larghezza dinamica per hit test
+		mov	ecx, nTabIdx
+		push	ecx
+		mov	eax, ecx
+		mov	ecx, sizeof TABITEM
+		mul	ecx
+		add	eax, offset g_TabItems
+;		mov	ecx, pCurrItem
+		mov	ecx, eax
+
+		; punta al titolo
+		add	eax, MAX_PATH
+		invoke	TabBar_GetTabWidth, hDC_hit, eax, (TABITEM PTR [ecx]).bModified
+		pop	ecx
+		add	eax, nTabLeft		
+				
 		; il click è dentro questa tab?
 		mov	ecx, nClickX
 		cmp	ecx, nTabLeft
@@ -197,16 +215,31 @@ TabBar_HitTest_Activate:
 		jmp	TabBar_HitTest_Done	
 
 TabBar_HitTest_Next:
-		mov	eax, nTabLeft
-		add	eax, 120
-		mov	nTabLeft, eax
+		mov	ecx, nTabIdx
+		push	ecx
+		mov	eax, ecx
+		mov	ecx, sizeof TABITEM
+		mul	ecx
+		add	eax, offset g_TabItems
+		mov	ecx, eax
+
+		; punta al titolo
+		add	eax, MAX_PATH
+		invoke	TabBar_GetTabWidth, hDC_hit, eax, (TABITEM PTR [ecx]).bModified
+		pop	ecx
+		add	eax, nTabLeft
+		mov	nTabLeft, eax		
 		inc	nTabIdx
 		jmp	TabBar_HitTest_Loop
 
 TabBar_HitTest_Done:
-		xor	eax, eax
-		ret
+		invoke ReleaseDC, hWnd, hDC_hit
+        	xor    eax, eax
+        	ret
+
 	.ELSEIF uMsg == WM_MBUTTONDOWN
+		invoke GetDC, hWnd
+        	mov    hDC_hit, eax
 		
 		; estrae le coordinate del click da lParam
 		mov	eax, lParam
@@ -225,8 +258,21 @@ TabBar_MHitTest_Loop:
 		jge	TabBar_MHitTest_Done
 
 		; carola il right della tab corrente
-		mov	eax, nTabLeft
-		add	eax, 120
+		; calcola larghezza dinamica per hit test
+		mov	ecx, nTabIdx
+		push	ecx
+		mov	eax, ecx
+		mov	ecx, sizeof TABITEM
+		mul	ecx
+		add	eax, offset g_TabItems
+		mov	ecx, eax
+
+		; punta al titolo
+		add	eax, MAX_PATH
+		invoke	TabBar_GetTabWidth, hDC_hit, eax, (TABITEM PTR [ecx]).bModified
+		pop	ecx
+		add	eax, nTabLeft	
+		mov	nTabLeft, eax
 		
 		; il click è dentro questa tab?
 		mov	ecx, nClickX
@@ -240,15 +286,28 @@ TabBar_MHitTest_Loop:
 		jmp	TabBar_MHitTest_Done
 
 TabBar_MHitTest_Next:
-		mov	eax, nTabLeft
-		add	eax, 120
+		; calcola larghezza dinamica per hit test
+		mov	ecx, nTabIdx
+		push	ecx
+		mov	eax, ecx
+		mov	ecx, sizeof TABITEM
+		mul	ecx
+		add	eax, offset g_TabItems
+		mov	ecx, eax
+
+		; punta al titolo
+		add	eax, MAX_PATH
+		invoke	TabBar_GetTabWidth, hDC_hit, eax, (TABITEM PTR [ecx]).bModified
+		pop	ecx
+		add	eax, nTabLeft	
 		mov	nTabLeft, eax
 		inc	nTabIdx
 		jmp	TabBar_MHitTest_Loop
 
 TabBar_MHitTest_Done:
-		xor	eax, eax
-		ret
+		invoke ReleaseDC, hWnd, hDC_hit
+        	xor    eax, eax
+        	ret
 
 	.ELSEIF
 		invoke	DefWindowProc, hWnd, uMsg, wParam, lParam
@@ -462,85 +521,143 @@ TabBar_AddTab endp
 ;
 TabBar_RemoveTab proc nIdx:DWORD
 
-    ; indice valido?
-    mov  eax, nIdx
-    cmp  eax, 0
-    jl   TabBar_RemoveTab_Error
-    cmp  eax, g_nTabCount
-    jge  TabBar_RemoveTab_Error
+    	; indice valido?
+    	mov  	eax, nIdx
+    	cmp  	eax, 0
+    	jl 	TabBar_RemoveTab_Error
+    	cmp  	eax, g_nTabCount
+    	jge  	TabBar_RemoveTab_Error
 
-    ; distruggi il RichEdit della tab rimossa
-    mov  ecx, sizeof TABITEM
-    mul  ecx
-    add  eax, offset g_TabItems
-    mov  edx, (TABITEM PTR [eax]).hRichEdit
-    test edx, edx
-    jz   TabBar_RemoveTab_Shift
-    mov  (TABITEM PTR [eax]).hRichEdit, 0
-    invoke DestroyWindow, edx
+    	; distruggi il RichEdit della tab rimossa
+    	mov  	ecx, sizeof TABITEM
+    	mul  	ecx
+    	add  	eax, offset g_TabItems
+    	mov  	edx, (TABITEM PTR [eax]).hRichEdit
+    	test 	edx, edx
+    	jz   	TabBar_RemoveTab_Shift
+    	mov  	(TABITEM PTR [eax]).hRichEdit, 0
+    	invoke 	DestroyWindow, edx
 
 TabBar_RemoveTab_Shift:
-    ; sposta tutti gli elementi successivi di uno verso sinistra
-    mov  eax, nIdx
-    mov  ecx, g_nTabCount
-    dec  ecx
-    cmp  eax, ecx
-    jge  TabBar_RemoveTab_Skip  ; era l'ultima — niente da spostare
+    	; sposta tutti gli elementi successivi di uno verso sinistra
+    	mov  	eax, nIdx
+    	mov  	ecx, g_nTabCount
+    	dec  	ecx
+    	cmp  	eax, ecx
+    	jge  	TabBar_RemoveTab_Skip  ; era l'ultima — niente da spostare
 
 TabBar_RemoveTab_ShiftLoop:
-    mov  eax, nIdx
-    mov  ecx, sizeof TABITEM
+    	mov  	eax, nIdx
+    	mov  	ecx, sizeof TABITEM
 
-    ; src = &g_TabItems[nIdx+1]
-    mov  edx, eax
-    inc  edx
-    push eax
-    mov  eax, edx
-    mul  ecx
-    add  eax, offset g_TabItems
-    mov  esi, eax
+    	; src = &g_TabItems[nIdx+1]
+    	mov  	edx, eax
+    	inc  	edx
+    	push 	eax
+    	mov  	eax, edx
+    	mul  	ecx
+    	add  	eax, offset g_TabItems
+    	mov  	esi, eax
 
-    ; dst = &g_TabItems[nIdx]
-    pop  eax
-    mul  ecx
-    add  eax, offset g_TabItems
-    mov  edi, eax
+    	; dst = &g_TabItems[nIdx]
+    	pop  	eax
+    	mul  	ecx
+    	add  	eax, offset g_TabItems
+    	mov  	edi, eax
 
-    mov  ecx, sizeof TABITEM
-    rep  movsb
+    	mov  	ecx, sizeof TABITEM
+    	rep  	movsb
 
-    inc  nIdx
-    mov  eax, nIdx
-    cmp  eax, g_nTabCount
-    jl   TabBar_RemoveTab_ShiftLoop
+    	inc  	nIdx
+    	mov  	eax, nIdx
+    	cmp  	eax, g_nTabCount
+    	jl   	TabBar_RemoveTab_ShiftLoop
 
 TabBar_RemoveTab_Skip:
-    dec  g_nTabCount
+    	dec  	g_nTabCount
 
-    ; se non ci sono più tab azzera tutto
-    cmp  g_nTabCount, 0
-    jne  TabBar_RemoveTab_HasTabs
-    mov  g_nActiveTab, 0
-    mov  g_hEditor, 0
-    invoke InvalidateRect, g_hTabBar, NULL, TRUE
-    mov  eax, 1
-    ret
+    	; se non ci sono più tab azzera tutto
+    	cmp  	g_nTabCount, 0
+    	jne  	TabBar_RemoveTab_HasTabs
+    	mov  	g_nActiveTab, 0
+    	mov  	g_hEditor, 0
+    	invoke 	InvalidateRect, g_hTabBar, NULL, TRUE
+    	mov  	eax, 1
+    	ret
 
 TabBar_RemoveTab_HasTabs:
-    ; aggiusta indice tab attiva se necessario
-    mov  eax, g_nActiveTab
-    cmp  eax, g_nTabCount
-    jl   TabBar_RemoveTab_OK
-    dec  g_nActiveTab
+    	; aggiusta indice tab attiva se necessario
+    	mov  	eax, g_nActiveTab
+    	cmp  	eax, g_nTabCount
+    	jl   	TabBar_RemoveTab_OK
+    	dec  	g_nActiveTab
 
 TabBar_RemoveTab_OK:
-    invoke Editor_ActivateTab, g_nActiveTab
-    invoke InvalidateRect, g_hTabBar, NULL, TRUE
-    mov  eax, 1
-    ret
+    	invoke 	Editor_ActivateTab, g_nActiveTab
+    	invoke 	InvalidateRect, g_hTabBar, NULL, TRUE
+    	mov  	eax, 1
+    	ret
 
 TabBar_RemoveTab_Error:
-    mov  eax, 0
-    ret
-
+    	mov  	eax, 0
+    	ret
 TabBar_RemoveTab endp
+
+;
+; TabBar_GetTabWidth
+;
+; Calcola la larghezza di una tab in base al titolo
+;
+; In:	hDC       = device context
+;	pszTitle  = puntatore al titolo
+; 	bModified = 1 se il file modificato
+;
+; Out:	eax = larghezza in pixel
+;
+TabBar_GetTabWidth proc hDC:DWORD, pszTitle:DWORD, bModified:DWORD
+LOCAL	sz:SIZEL
+LOCAL	nLen:DWORD
+LOCAL	nWidth:DWORD
+LOCAL	hFont:DWORD
+LOCAL	hOldFont:DWORD
+	
+	; usa il font della TabBar - non quello di sistema
+	invoke	GetStockObject, DEFAULT_GUI_FONT
+	mov	hFont, eax
+	invoke	SelectObject, hDC, hFont
+	mov	hOldFont, eax
+
+	; lunghezza stringa
+	invoke	lstrlen, pszTitle
+	mov	nLen, eax
+
+	; misura il resto
+	invoke	GetTextExtentPoint32, hDC, pszTitle, nLen, ADDR sz
+	mov	eax, sz.x		; larghezza testo in pixel
+
+	; ripristina font originale
+	invoke	SelectObject, hDC, hOldFont
+
+	; aggiungi spazio fisso per i margini
+	add	eax, TAB_PADDING
+	
+	; aggiungi spazio per il pallino se modificato
+	cmp	bModified, 1
+	jne	TabBar_GetTabWidth_NoDoc
+	
+	add	eax, TAB_DOT_WIDTH
+
+TabBar_GetTabWidth_NoDoc:
+	; applica minimo e massimo
+	cmp	eax, TAB_MIN_WIDTH
+	jge	TabBar_GetTabWidth_CheckMax
+	mov	eax, TAB_MIN_WIDTH
+
+TabBar_GetTabWidth_CheckMax:
+	cmp	eax, TAB_MAX_WIDTH
+	jle	TabBar_GetTabWidth_Done
+	mov	eax, TAB_MAX_WIDTH
+
+TabBar_GetTabWidth_Done:
+	ret
+TabBar_GetTabWidth endp
