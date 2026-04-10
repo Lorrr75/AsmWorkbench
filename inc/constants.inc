@@ -23,8 +23,8 @@ TAB_COLOR_TEXT		equ 00000000h		; testo - nero
 TAB_COLOR_MODIFIED	equ 000000ffh		; pallino della modifica - blu
 TAB_COLOR_BORDER	equ 00a0a0a0h		; bordo Tab - grigio scuro
 TAB_MIN_WIDTH		equ 80			; larghezza minima tab
-TAB_MAX_WIDTH		equ 200			; larghezza massima tab
-TAB_PADDING		equ 30			; spazio fisso per X e margini
+TAB_MAX_WIDTH		equ 400			; larghezza massima tab
+TAB_PADDING		equ 40			; spazio fisso per X e margini
 TAB_DOT_WIDTH		equ 16			; spazio per il pallino ●
 
 

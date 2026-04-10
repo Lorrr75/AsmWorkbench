@@ -170,7 +170,6 @@ TabBar_HitTest_Loop:
 		mov	ecx, sizeof TABITEM
 		mul	ecx
 		add	eax, offset g_TabItems
-;		mov	ecx, pCurrItem
 		mov	ecx, eax
 
 		; punta al titolo
@@ -272,7 +271,6 @@ TabBar_MHitTest_Loop:
 		invoke	TabBar_GetTabWidth, hDC_hit, eax, (TABITEM PTR [ecx]).bModified
 		pop	ecx
 		add	eax, nTabLeft	
-		mov	nTabLeft, eax
 		
 		; il click è dentro questa tab?
 		mov	ecx, nClickX
@@ -286,20 +284,6 @@ TabBar_MHitTest_Loop:
 		jmp	TabBar_MHitTest_Done
 
 TabBar_MHitTest_Next:
-		; calcola larghezza dinamica per hit test
-		mov	ecx, nTabIdx
-		push	ecx
-		mov	eax, ecx
-		mov	ecx, sizeof TABITEM
-		mul	ecx
-		add	eax, offset g_TabItems
-		mov	ecx, eax
-
-		; punta al titolo
-		add	eax, MAX_PATH
-		invoke	TabBar_GetTabWidth, hDC_hit, eax, (TABITEM PTR [ecx]).bModified
-		pop	ecx
-		add	eax, nTabLeft	
 		mov	nTabLeft, eax
 		inc	nTabIdx
 		jmp	TabBar_MHitTest_Loop
@@ -633,10 +617,11 @@ LOCAL	hOldFont:DWORD
 
 	; misura il resto
 	invoke	GetTextExtentPoint32, hDC, pszTitle, nLen, ADDR sz
-	mov	eax, sz.x		; larghezza testo in pixel
 
 	; ripristina font originale
 	invoke	SelectObject, hDC, hOldFont
+	mov	eax, sz.x		; larghezza testo in pixel
+
 
 	; aggiungi spazio fisso per i margini
 	add	eax, TAB_PADDING

@@ -1,7 +1,7 @@
 # AsmWorkbench — Documento di Architettura
 
-> Versione: 1.5  
-> Stato: Sviluppo in corso — Step 5 completato  
+> Versione: 1.6  
+> Stato: Sviluppo in corso — Step 3 rivisto e completato  
 > Lingua: Italiano (versione inglese prevista)  
 > Licenza: EUPL v1.2
 
@@ -155,7 +155,7 @@ AsmWorkbench/
 └── LICENSE EUPL-1.2.txt    ← Testo EUPL v1.2
 ```
 
-> **Nota sul .gitignore**: aggiungere `*.exe`, `*.obj`, `*.res` per escludere i file compilati dal versionamento.
+> **Nota sul .gitignore**: aggiungere `*.exe`, `*.obj`, `*.res`, `*.lnk` per escludere i file compilati dal versionamento. Rimuovere anche i file di test dalla root (`TestSalvataggioconnomelungo.asm`, `test.asm` ecc.).
 
 ---
 
@@ -180,21 +180,26 @@ AsmWorkbench/
 - Implementa i due temi predefiniti: **Light** e **Dark**
 - Gestisce il cambio tema a runtime ridisegnando tutti i componenti
 
-### `tabbar.asm` — Tab bar custom
-- Disegna le tab interamente con `WM_DRAWITEM` (owner-draw)
-- Usa i colori dal tema attivo — mai hardcoded
-- Gestisce il simbolo `●` per file modificati
-- Gestisce il pulsante `×` per chiusura tab
-- Supporta click sinistro (attiva) e click centrale (chiude)
-- Gestisce l'overflow con frecce di scorrimento
+### `TabBar.asm` — Tab bar custom ✅
+- Classe finestra custom registrata e creata in `InitIde`
+- Disegno owner-draw completo: sfondo, bordo, titolo, pallino ●, pulsante ×
+- Larghezza tab dinamica calcolata con `GetTextExtentPoint32` + padding
+- `TabBar_AddTab` — aggiunge tab e crea RichEdit dedicato nascosto
+- `TabBar_RemoveTab` — rimuove tab e distrugge il RichEdit associato
+- `TabBar_DrawTab` — disegna singola tab con pallino GDI e × testuale
+- `TabBar_GetTabWidth` — calcola larghezza in base al titolo
+- Click sinistro → attiva tab, Click × → chiude tab
+- Click centrale → chiude tab
+- `EN_CHANGE` gestito in `WM_COMMAND` → imposta `bModified=1` e ridisegna
+- Ogni tab ha il proprio RichEdit dedicato — nessun salvataggio/ripristino testo
 
 ### `Editor.asm` — Wrapper RichEdit ✅
-- Carica `Msftedit.dll` e crea il controllo RichEdit 4.1
-- `Editor_Init` — carica la DLL
-- `Editor_Create` — crea il controllo con stili corretti
-- `Editor_Resize` — ridimensiona in base alla finestra (sotto TabBar, sopra StatusBar)
-- `Editor_SetDefaultSettings` — font Courier New 10pt, tab stop 4 caratteri
-- Notifiche `EN_CHANGE` e `EN_SELCHANGE` attive per futuri moduli
+- `Editor_Init` — carica `riched20.dll`
+- `Editor_CreateForTab` — crea RichEdit nascosto per una tab, dimensionato con `g_nClientW`/`g_nClientH`
+- `Editor_ActivateTab` — nasconde tutti i RichEdit, mostra e ridimensiona quello attivo
+- `Editor_ApplySettings` — font Courier New 10pt, tab stop configurabile
+- `Editor_Resize` — ridimensiona il RichEdit attivo
+- Variabili `g_nClientW` e `g_nClientH` sempre aggiornate da `WM_SIZE`
 
 ### `syntax.asm` — Syntax highlighting + validazione
 - **Passaggio 1 — Colorazione**: colora i token riconosciuti con i colori del tema

@@ -34,6 +34,21 @@ LOCAL	nHeight:DWORD
 			invoke	FileMgr_Open
 		.ELSEIF eax == IDM_FILE_SAVE
 			invoke	FileMgr_Save
+		.ELSE
+			; controlla se è una notifica EN_CHANGE dal RichEdit
+			mov	eax, wParam
+			shr	eax, 16			; high word = codice notifica
+			cmp	eax, EN_CHANGE
+			jne	MainWnd_Command_Done
+	
+			; testo modificato - aggiorna bModified tab Attiva
+			mov	eax, g_nActiveTab
+			mov	ecx, sizeof TABITEM
+			mul	ecx
+			add	eax, offset g_TabItems
+			mov	(TABITEM PTR [eax]).bModified, 1
+			invoke	InvalidateRect, g_hTabBar, NULL, TRUE
+MainWnd_Command_Done:
 		.ENDIF
 	.ELSEIF uMsg == WM_CLOSE
 		invoke	DestroyWindow, hWnd
@@ -57,6 +72,7 @@ LOCAL	nHeight:DWORD
 		; posiziona StatusBar in fondo alla finestra (ha già la proprietà di auto ridimensionarsi con SBAR_SIZEGRIP)
 		invoke	SendMessage, g_hStatusBar, WM_SIZE, 0, 0
 			
+	.ELSEIF uMsg == WM_NOTIFY
 	.ELSEIF uMsg == WM_MOVE
 	.ELSEIF uMsg == WM_MOUSEMOVE
 	.ELSEIF uMsg == WM_LBUTTONDOWN
