@@ -325,6 +325,10 @@ LOCAL 	hOldBrush:DWORD
 LOCAL 	hOldPen:DWORD
 LOCAL	nDotX2:DWORD
 
+	; usa il font della TabBar - non quello di sistema
+	invoke	GetStockObject, DEFAULT_GUI_FONT
+	invoke	SelectObject, hDC, eax
+	mov	hOldFont, eax
 
 	; sfondo del tab
 	.IF bActive == 1
@@ -604,7 +608,7 @@ LOCAL	nLen:DWORD
 LOCAL	nWidth:DWORD
 LOCAL	hFont:DWORD
 LOCAL	hOldFont:DWORD
-	
+
 	; usa il font della TabBar - non quello di sistema
 	invoke	GetStockObject, DEFAULT_GUI_FONT
 	mov	hFont, eax
