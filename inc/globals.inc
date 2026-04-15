@@ -24,3 +24,6 @@ g_nClientH		dd ?			; altezza area client aggiornata da WM_SIZE per finestra Rich
 
 .data
 g_TabItems		TABITEM MAX_TABS dup (<>)	; array di tutte le tab
+
+; Tema attivo
+g_Theme			THEME<>			; struttura tema corrente 

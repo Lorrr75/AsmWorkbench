@@ -26,3 +26,7 @@ FileMgr_Save      		proto
 FileMgr_SaveAs    		proto
 FileMgr_WriteFile 		proto :DWORD
 
+Theme_Load      		proto :DWORD
+Theme_LoadLight 		proto
+Theme_LoadDark  		proto
+Theme_Apply     		proto

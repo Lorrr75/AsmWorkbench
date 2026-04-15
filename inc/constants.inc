@@ -52,7 +52,9 @@ szNewFileTitle			db "Senza nome %d",0
 szFileFilter			db "File Assembly (*.asm)", 0, "*.asm", 0, "Tutti i file (*.*)", 0, "*.*", 0, 0
 szDefExt			db "asm", 0
 
-
+; dati per il tema visivo
+szThemeLight    db "Light", 0
+szThemeDark     db "Dark", 0
 
 ;
 ; Messaggi di Attenzione per Message Box

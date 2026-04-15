@@ -16,6 +16,10 @@ LOCAL	aParts[3]:DWORD			; numero di parti della StatusBar
 	cmp	eax, 0
 	je	InitIde_Error
 
+	; carica tema di default
+	invoke	Theme_Load, THEME_LIGHT
+	invoke	Theme_Apply	
+
 	; Partimamo con la creazione della TabBar
 	invoke	TabBar_RegisterClass
 	cmp	eax, 0			; ci sono stati degli errori?
