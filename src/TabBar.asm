@@ -75,14 +75,18 @@ LOCAL 	hDC_hit:DWORD
 		
 		; imposta lo sfondo della TabBar
 		invoke	GetClientRect, hWnd, ADDR rc
-		invoke	CreateSolidBrush, TAB_COLOR_BG
+		invoke  CreateSolidBrush, g_Theme.clrTabBarBg
 		mov	hBrush, eax
 		invoke	FillRect, ps.hdc, ADDR rc, hBrush
 		invoke	DeleteObject, hBrush
 
 		; disegna la linea di separazione in fondo alla TabBar
+		invoke 	CreatePen, PS_SOLID, 1, g_Theme.clrTabBorder
+        	mov    	hBrush, eax          			; riusa hBrush come hPen temporaneo
+        	invoke 	SelectObject, ps.hdc, hBrush
 		invoke	MoveToEx, ps.hdc, 0 ,TABBAR_HEIGHT-1, NULL
 		invoke	LineTo, ps.hdc, rc.right, TABBAR_HEIGHT-1
+		invoke	DeleteObject, hBrush
 
 		; aggiunge un tab iniziale di test
 		mov	nTabIdx, 0
@@ -332,9 +336,9 @@ LOCAL	nDotX2:DWORD
 
 	; sfondo del tab
 	.IF bActive == 1
-		invoke 	CreateSolidBrush, TAB_COLOR_ACTIVE
+		invoke CreateSolidBrush, g_Theme.clrTabActiveBg
 	.ELSE
-		invoke	CreateSolidBrush, TAB_COLOR_INACTIVE
+		invoke CreateSolidBrush, g_Theme.clrTabInactiveBg
 	.ENDIF
 	
 	mov	hBrush, eax
@@ -342,7 +346,7 @@ LOCAL	nDotX2:DWORD
 	invoke	DeleteObject, hBrush
 
 	; bordo del tab
-	invoke	CreateSolidBrush, TAB_COLOR_BORDER
+	invoke CreateSolidBrush, g_Theme.clrTabBorder
 	mov	hBrush, eax
 	invoke	FrameRect, hDC, pRect, hBrush
 	invoke	DeleteObject, hBrush
@@ -361,7 +365,12 @@ LOCAL	nDotX2:DWORD
 	mov	rcText.bottom, edx
 
 	invoke	SetBkMode, hDC, TRANSPARENT
-	invoke	SetTextColor, hDC, TAB_COLOR_TEXT
+	; colore testo in base a tab attiva o inattiva
+    	.IF bActive == 1
+        	invoke SetTextColor, hDC, g_Theme.clrTabActiveFg
+    	.ELSE
+        	invoke SetTextColor, hDC, g_Theme.clrTabInactiveFg
+    	.ENDIF	
 	invoke	DrawText, hDC, pszTitle, -1, ADDR rcText, DT_LEFT or DT_VCENTER or DT_SINGLELINE or DT_END_ELLIPSIS
 
 	; disegna il simbolo X di chiusura a destra nel Tab
@@ -375,7 +384,7 @@ LOCAL	nDotX2:DWORD
 	mov	rcClose.right, ecx
 	mov	rcClose.bottom, 20
 
-	invoke	SetTextColor, hDC, TAB_COLOR_BORDER
+	invoke 	SetTextColor, hDC, g_Theme.clrTabBorder
 	invoke	DrawText, hDC, ADDR szTabClose, -1, ADDR rcClose, DT_CENTER or DT_VCENTER or DT_SINGLELINE	
 
 	; disegna il pallino modificato dopo il testo
@@ -389,9 +398,9 @@ LOCAL	nDotX2:DWORD
 		add	ecx, 8
 		mov	nDotX2, ecx
 
-		invoke 	CreateSolidBrush, TAB_COLOR_MODIFIED
+		invoke 	CreateSolidBrush, g_Theme.clrTabModified
        		mov    	hDotBrush, eax
-        	invoke  CreatePen, PS_NULL, 0, TAB_COLOR_MODIFIED
+        	invoke 	CreatePen, PS_NULL, 0, g_Theme.clrTabModified
         	mov    	hDotPen, eax
 
         	invoke 	SelectObject, hDC, hDotBrush

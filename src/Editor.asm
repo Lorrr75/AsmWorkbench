@@ -87,6 +87,7 @@ LOCAL	nH:DWORD
 	mov	hRE, eax
 
 	invoke	Editor_ApplySettings, hRE
+	invoke	Theme_ApplyToEditor, hRE
 
 	; resta nascosto finché Editor_ActivateTab non lo mostrerà
 	mov	eax, hRE
@@ -125,6 +126,7 @@ Editor_ActivateTab_HideLoop:
 	jz	Editor_Activate_HideNext
 	
 	invoke	ShowWindow, edx, SW_HIDE
+	invoke  Theme_ApplyToEditor, g_hEditor
 
 Editor_Activate_HideNext:
 	inc	i

@@ -118,13 +118,53 @@ Theme_LoadDark endp
 ; Da chiamare dopo Theme_Load o dopo cambio tema
 ;
 Theme_Apply proc
-    ; aggiorna sfondo editor
-    .IF g_hEditor != 0
-        invoke SendMessage, g_hEditor, EM_SETBKGNDCOLOR, 0, g_Theme.clrBackground
-    .ENDIF
+LOCAL i:DWORD
 
-    ; ridisegna tutto
-    invoke InvalidateRect, g_hMainWnd, NULL, TRUE
+	; applica sfondo a tutti i RichEdit aperti
+	mov	i, 0
+Theme_Apply_Loop:
+	mov	eax, i
+	cmp	eax, g_nTabCount
+	jge	Theme_Apply_Done
+
+	mov	ecx, sizeof TABITEM
+	mul	ecx
+	add	eax, offset g_TabItems
+	mov	edx, (TABITEM PTR [eax]).hRichEdit
+	test	edx, edx
+	jz	Theme_Apply_Next
+	invoke  Theme_ApplyToEditor, edx
+
+Theme_Apply_Next:
+	inc	i
+	jmp	Theme_Apply_Loop
+Theme_Apply_Done:
+	invoke	InvalidateRect, g_hMainWnd, NULL, TRUE
     ret
 Theme_Apply endp
 	
+;
+; Theme_ApplyToEditor
+; Applica colori tema a un singolo RichEdit
+;
+; Input: hRE = handle RichEdit
+;
+Theme_ApplyToEditor proc hRE:DWORD
+LOCAL	cf:CHARFORMAT2
+
+	invoke	SendMessage, hRE, EM_SETBKGNDCOLOR, 0, g_Theme.clrBackground
+
+	; azzera struttura
+	lea	edi, cf
+	mov	ecx, sizeof CHARFORMAT2
+	xor	eax, eax
+	rep	stosb
+
+	mov	cf.cbSize, sizeof CHARFORMAT2
+	mov	cf.dwMask, CFM_COLOR
+	mov	eax, g_Theme.clrForeground
+	mov	cf.crTextColor, eax
+
+	invoke	SendMessage, hRE, EM_SETCHARFORMAT, SCF_ALL, ADDR cf
+	ret	
+Theme_ApplyToEditor endp

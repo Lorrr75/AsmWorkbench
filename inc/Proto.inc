@@ -30,3 +30,4 @@ Theme_Load      		proto :DWORD
 Theme_LoadLight 		proto
 Theme_LoadDark  		proto
 Theme_Apply     		proto
+Theme_ApplyToEditor 		proto :DWORD

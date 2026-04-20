@@ -17,7 +17,7 @@ LOCAL	aParts[3]:DWORD			; numero di parti della StatusBar
 	je	InitIde_Error
 
 	; carica tema di default
-	invoke	Theme_Load, THEME_LIGHT
+	invoke	Theme_Load, THEME_DARK
 	invoke	Theme_Apply	
 
 	; Partimamo con la creazione della TabBar
