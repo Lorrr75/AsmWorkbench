@@ -15,6 +15,7 @@ g_hAccel		HANDLE ?		; handle acceleratori da tastiera
 g_hTabBar		HWND ?			; handle della TabBar
 g_nTabCount		dd ?			; numero di tab attualmente aperte
 g_nActiveTab		dd ?			; indice tab attiva
+g_nTabScrollOffset	dd ?			; indice prima tab visibile 
 
 ; Editor
 g_hEditor		HWND ?			; handle della finestra di edit

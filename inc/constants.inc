@@ -12,8 +12,9 @@ IDM_FILE_OPEN		equ 1002
 IDM_FILE_SAVE		equ 1003
 
 
-TABBAR_HEIGHT		equ 28
-STATUSBAR_HEIGHT	equ 22
+TABBAR_HEIGHT		equ 28			; altezza TabBar
+TAB_ARROW_WIDTH		equ 20			; larghezza di ogni freccia
+STATUSBAR_HEIGHT	equ 22			; altezza status bar
 
 ; valori provvisori del tema Light
 TAB_COLOR_BG		equ 00f0f0f0h		; sfondo grigio chiaro della TabBar
@@ -41,6 +42,8 @@ szStatusNoFile			db "Nessun File",0		; testo iniziale della creazione della Stat
 ; dati per la TabBar
 szTabBarClass			db "AWB_TabBar",0
 szTabClose			db "x",0
+szArrowLeft     		db "<", 0
+szArrowRight    		db ">", 0
 
 ; dati per l'Editor
 szMsfteditDll			db "riched20.dll",0

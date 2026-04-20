@@ -68,7 +68,11 @@ LOCAL	bAct:DWORD
 LOCAL	pTitle:DWORD
 LOCAL	pCurItem:DWORD
 LOCAL 	hDC_hit:DWORD
-
+LOCAL	nAvailWidth:DWORD
+LOCAL	nArrowsNeeded:DWORD
+LOCAL	nTotalTabWidth:DWORD
+LOCAL 	rcArrow:RECT
+LOCAL 	hArrowBrush:DWORD
 
 	.IF uMsg == WM_PAINT
 		invoke BeginPaint, hWnd, ADDR ps
@@ -88,17 +92,58 @@ LOCAL 	hDC_hit:DWORD
 		invoke	LineTo, ps.hdc, rc.right, TABBAR_HEIGHT-1
 		invoke	DeleteObject, hBrush
 
-		; aggiunge un tab iniziale di test
-		mov	nTabIdx, 0
-		mov	nTabLeft, 0
+		; calcola larghezza disponibile per le tab
+		; (lascia spazio per le freccie a destra)
 
+		;calcola larghezza totale di tutte le tab
+		mov	nTotalTabWidth, 0
+		mov	nTabIdx, 0
+TabBar_Paint_CalcWidth:
+		mov	eax, nTabIdx
+		cmp	eax, g_nTabCount
+		jge	TabBar_PaintCalcDone
+
+		mov	ecx, sizeof TABITEM
+		mul	ecx
+		add	eax, offset g_TabItems
+		mov	ecx, eax
+		add	eax, MAX_PATH
+		mov	edx, (TABITEM PTR [ecx]).bModified
+		invoke	TabBar_GetTabWidth, ps.hdc, eax, edx
+		add	nTotalTabWidth, eax
+		inc	nTabIdx
+		jmp	TabBar_Paint_CalcWidth
+
+TabBar_PaintCalcDone:
+		; servono le freccie?
+		mov	eax, nTotalTabWidth
+		cmp	eax, rc.right
+		jle	TabBar_Paint_NoArrows
+		
+		mov	nArrowsNeeded, 1
+		mov	eax, rc.right
+		sub	eax, TAB_ARROW_WIDTH
+		sub	eax, TAB_ARROW_WIDTH
+		mov	nAvailWidth, eax
+		jmp	TabBar_Paint_DrawTabs
+
+TabBar_Paint_NoArrows:
+		mov	nArrowsNeeded, 0
+		mov	eax, rc.right
+		mov	nAvailWidth, eax
+
+TabBar_Paint_DrawTabs:
+		; disegna le tab a partire da g_nTabScrollOffset
+		mov	eax, g_nTabScrollOffset
+		mov	nTabIdx, eax
+		mov	nTabLeft, 0
+		
 TabBar_Paint_Loop:
 		mov	eax, nTabIdx
 		cmp	eax, g_nTabCount
 		jge	TabBar_Paint_Done
 		
 		; calcola puntatore a TABITEM
-		mov	eax, nTabIdx
 		mov	ecx, sizeof TABITEM
 		mul	ecx
 		add	eax, offset g_TabItems
@@ -122,6 +167,12 @@ TabBar_Paint_Loop:
 		mov	ecx, (TABITEM PTR [eax]).bModified
 		invoke	TabBar_GetTabWidth, ps.hdc, pTitle, ecx
 
+		; controlla se la tab supera lo spazio disponibile
+		mov	ecx, nTabLeft
+		add	ecx, eax
+		cmp	ecx, nAvailWidth
+		jg	TabBar_Paint_Done
+
 		; costruisce RECT
 		mov	ecx, nTabLeft
 		mov	rcTab.left, ecx
@@ -143,7 +194,46 @@ TabBar_Paint_Loop:
 		jmp	TabBar_Paint_Loop
 
 TabBar_Paint_Done:
-		
+		; disegna le freccie se necessario
+		cmp	nArrowsNeeded, 0
+		je	TabBar_Paint_End
+
+		; freccia sinistra
+		invoke	CreateSolidBrush, g_Theme.clrTabInactiveBg
+		mov	hArrowBrush, eax
+		mov	eax, rc.right
+		sub	eax, TAB_ARROW_WIDTH
+		sub	eax, TAB_ARROW_WIDTH
+		mov	rcArrow.left, eax
+		mov	rcArrow.top, 0
+		add	eax, TAB_ARROW_WIDTH
+		mov	rcArrow.right, eax
+		mov	rcArrow.bottom, TABBAR_HEIGHT-1
+		invoke	FillRect, ps.hdc, ADDR rcArrow, hArrowBrush
+		invoke	FrameRect, ps.hdc, ADDR rcArrow, hArrowBrush
+		invoke	DeleteObject, hArrowBrush
+		invoke	SetBkMode, ps.hdc, TRANSPARENT
+		invoke	SetTextColor, ps.hdc, g_Theme.clrTabActiveFg
+		invoke 	DrawText, ps.hdc, ADDR szArrowLeft, -1, ADDR rcArrow, \
+                         DT_CENTER or DT_VCENTER or DT_SINGLELINE
+
+		; disegna freccia destra
+		invoke	CreateSolidBrush, g_Theme.clrTabInactiveBg
+		mov	hArrowBrush, eax
+		mov	eax, rc.right
+		sub	eax, TAB_ARROW_WIDTH
+		mov	rcArrow.left, eax
+		mov	rcArrow.top, 0
+		mov	eax, rc.right
+		mov	rcArrow.right, eax
+		mov	rcArrow.bottom, TABBAR_HEIGHT-1
+		invoke	FillRect, ps.hdc, ADDR rcArrow, hArrowBrush
+		invoke	DeleteObject, hArrowBrush
+		invoke	SetTextColor, ps.hdc, g_Theme.clrTabActiveFg
+		invoke 	DrawText, ps.hdc, ADDR szArrowRight, -1, ADDR rcArrow, \
+                         DT_CENTER or DT_VCENTER or DT_SINGLELINE
+
+TabBar_Paint_End:
 		invoke	EndPaint, hWnd, ADDR ps
 		xor	eax, eax
 		ret	
@@ -158,6 +248,42 @@ TabBar_Paint_Done:
 		shr	eax, 16			; Y del click
 		mov	nClickY, eax
 
+		; controllo click su freccia sinistra
+		invoke	GetClientRect, hWnd, ADDR rc
+		mov	eax, rc.right
+		sub	eax, TAB_ARROW_WIDTH
+		sub	eax, TAB_ARROW_WIDTH
+		cmp	nClickX, eax
+		jl	TabBar_HitTest_NotArrow
+
+		; click avvenuto nella zona freccie
+		mov	eax, rc.right
+		sub 	eax, TAB_ARROW_WIDTH
+		cmp	nClickX, eax
+		jge	TabBar_Arrow_Right
+
+		; freccia sinistra - scorri a sinistra
+		cmp	g_nTabScrollOffset, 0
+		jle	TabBar_Arrow_Done
+		dec	g_nTabScrollOffset
+		invoke	InvalidateRect, g_hTabBar, NULL, TRUE
+		jmp	TabBar_Arrow_Done
+
+TabBar_Arrow_Right:
+		; freccia destra - scorri a destra
+		mov	eax, g_nTabScrollOffset
+		inc 	eax
+		cmp	eax, g_nTabCount
+		jge	TabBar_Arrow_Done
+		inc	g_nTabScrollOffset
+		invoke	InvalidateRect, g_hTabBar, NULL, TRUE
+
+TabBar_Arrow_Done:
+		invoke	ReleaseDC, hWnd, hDC_hit
+		xor	eax, eax
+		ret
+
+TabBar_HitTest_NotArrow:
 		; itera su tutte le tab per trovare quella cliccata
 		mov	nTabIdx, 0
 		mov	nTabLeft, 0
