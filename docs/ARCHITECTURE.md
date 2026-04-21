@@ -1,7 +1,7 @@
 # AsmWorkbench — Documento di Architettura
 
-> Versione: 1.6  
-> Stato: Sviluppo in corso — Step 3 rivisto e completato  
+> Versione: 1.7  
+> Stato: Sviluppo in corso — Step 6 completato  
 > Lingua: Italiano (versione inglese prevista)  
 > Licenza: EUPL v1.2
 
@@ -125,7 +125,7 @@ AsmWorkbench/
 │   ├── Project.asm         ← Gestione progetto .awb                 [futuro]
 │   ├── PanelMgr.asm        ← Layout pannelli ridimensionabili       [futuro]
 │   ├── Config.asm          ← Configurazione (file INI)              [futuro]
-│   ├── Theme.asm           ← Sistema temi e colori                  [futuro]
+│   ├── Theme.asm           ← Sistema temi e colori                  ✅ COMPLETATO
 │   ├── Updater.asm         ← Notifica aggiornamenti disponibili     [futuro]
 │   ├── SymTable.asm        ← Parser e database simboli (AsmSense)   [futuro]
 │   ├── AsmSense.asm        ← UI autocomplete e parameter hints      [futuro]
@@ -138,7 +138,7 @@ AsmWorkbench/
 │   ├── constants.inc       ← Costanti EQU, stringhe, ID controlli, colori tema
 │   ├── globals.inc         ← Variabili globali .data? condivise tra moduli
 │   ├── structs.inc         ← Strutture dati custom (DOCUMENT, PROJECT...)
-│   ├── theme.inc           ← Struttura THEME e costanti temi        [futuro]
+│   ├── theme.inc           ← Struttura THEME e costanti temi        ✅ COMPLETATO
 │   └── apidb.inc           ← Database Win32 API per AsmSense        [futuro]
 │
 ├── res/                    ← Risorse Windows
@@ -185,13 +185,25 @@ AsmWorkbench/
 - Disegno owner-draw completo: sfondo, bordo, titolo, pallino ●, pulsante ×
 - Larghezza tab dinamica calcolata con `GetTextExtentPoint32` + padding
 - `TabBar_AddTab` — aggiunge tab e crea RichEdit dedicato nascosto
-- `TabBar_RemoveTab` — rimuove tab e distrugge il RichEdit associato
+- `TabBar_RemoveTab` — rimuove tab, distrugge il RichEdit associato, gestisce ultima tab
 - `TabBar_DrawTab` — disegna singola tab con pallino GDI e × testuale
 - `TabBar_GetTabWidth` — calcola larghezza in base al titolo
-- Click sinistro → attiva tab, Click × → chiude tab
-- Click centrale → chiude tab
+- Click sinistro → attiva tab, Click × → chiude tab, Click centrale → chiude tab
 - `EN_CHANGE` gestito in `WM_COMMAND` → imposta `bModified=1` e ridisegna
 - Ogni tab ha il proprio RichEdit dedicato — nessun salvataggio/ripristino testo
+- **Navigazione tab**: frecce `<` `>` compaiono automaticamente quando le tab superano la larghezza disponibile
+- `g_nTabScrollOffset` controlla la prima tab visibile
+- Tutti i colori dal tema attivo `g_Theme` — nessun colore hardcoded
+
+### `Theme.asm` — Sistema temi ✅
+- `Theme_Load` — carica tema per ID (`THEME_LIGHT` / `THEME_DARK`)
+- `Theme_LoadLight` — imposta tutti i colori del tema Light (ispirato a Visual Studio)
+- `Theme_LoadDark` — imposta tutti i colori del tema Dark (ispirato a VS Code Dark+)
+- `Theme_Apply` — applica il tema a tutti i RichEdit aperti e ridisegna la finestra
+- `Theme_ApplyToEditor` — applica sfondo e colore testo a un singolo RichEdit
+- Struttura `g_Theme` globale consultata da tutti i moduli per i colori
+- Cambio tema a runtime: `Theme_Load` + `Theme_Apply`
+- Tema Custom previsto (futuro — `Config.asm`)
 
 ### `Editor.asm` — Wrapper RichEdit ✅
 - `Editor_Init` — carica `riched20.dll`
@@ -943,7 +955,7 @@ NomeModulo_NomeProcedura endp
 | 3 | `TabBar.asm` | Tab bar custom owner-draw con ● e × | ✅ |
 | 4 | `Editor.asm` | RichEdit 4.1 embedded con gestione resize | ✅ |
 | 5 | `FileMgr.asm` | New / Open / Save / Save As / Save All | ✅ |
-| 6 | `Theme.asm` + `theme.inc` | Sistema temi Light / Dark / Custom | ⬜ |
+| 6 | `Theme.asm` + `theme.inc` | Sistema temi Light / Dark / Custom | ✅ |
 | 7 | `Syntax.asm` | Highlighting + sottolineatura ondulata | ⬜ |
 | 8 | `IndentGuide.asm` | Linee guida indentazione blocchi | ⬜ |
 | 9 | `Toolbar.asm` | Toolbar icone con azioni principali | ⬜ |
@@ -985,4 +997,4 @@ Testo completo: [https://eupl.eu/1.2/it/](https://eupl.eu/1.2/it/)
 
 ---
 
-*Documento aggiornato: 2026 — AsmWorkbench è in sviluppo attivo — Step 1✅ 2✅ 3✅ 4✅ 5✅*
+*Documento aggiornato: 2026 — AsmWorkbench è in sviluppo attivo — Step 1✅ 2✅ 3✅ 4✅ 5✅ 6✅*

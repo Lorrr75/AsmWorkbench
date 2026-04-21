@@ -4,6 +4,7 @@
 # File di listing e mappe (generati dal linker/assembler)
 *.lst
 *.map
+*.lnk
 
 # File di backup di editor (come quelli creati da Notepad++ o RadASM)
 *.bak
