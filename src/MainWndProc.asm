@@ -40,6 +40,12 @@ LOCAL	nHeight:DWORD
 			shr	eax, 16			; high word = codice notifica
 			cmp	eax, EN_CHANGE
 			jne	MainWnd_Command_Done
+
+			; evita ricorsione durante highlighting
+			cmp	g_bHighlighting, 1
+			je	MainWnd_EN_Change_Done
+
+			mov	g_bHighlighting, 1
 	
 			; testo modificato - aggiorna bModified tab Attiva
 			mov	eax, g_nActiveTab
@@ -48,6 +54,31 @@ LOCAL	nHeight:DWORD
 			add	eax, offset g_TabItems
 			mov	(TABITEM PTR [eax]).bModified, 1
 			invoke	InvalidateRect, g_hTabBar, NULL, TRUE
+
+			; controlla quante righe sono cambiate
+			; se più di 1 (incolla) allora ricolora tutto
+			invoke	SendMessage, g_hEditor, EM_GETLINECOUNT, 0, 0
+			cmp	eax, g_nLastLineCount
+			je	MainWnd_EN_SingleLine
+
+			; numero di righe cambiato - ricolora tutto
+			mov	g_nLastLineCount, eax
+			invoke	Editor_RehighlightAll, g_hEditor
+			jmp	MainWnd_EN_Change_Done
+
+MainWnd_EN_SingleLine:
+			; riga singola modificata
+			invoke	SendMessage, g_hEditor, EM_LINEFROMCHAR, -1 ,0
+			mov	ecx, eax
+			invoke	Syntax_HighlightLine, g_hEditor, ecx
+			cmp	ecx, 0
+			je	MainWnd_EN_Change_Done
+			
+			dec	ecx
+			invoke	Syntax_HighlightLine, g_hEditor, ecx
+
+MainWnd_EN_Change_Done:
+			mov	g_bHighlighting, 0
 MainWnd_Command_Done:
 		.ENDIF
 	.ELSEIF uMsg == WM_CLOSE

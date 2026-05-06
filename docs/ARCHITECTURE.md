@@ -1,7 +1,7 @@
 # AsmWorkbench — Documento di Architettura
 
-> Versione: 1.7  
-> Stato: Sviluppo in corso — Step 6 completato  
+> Versione: 1.8  
+> Stato: Sviluppo in corso — Step 7 completato  
 > Lingua: Italiano (versione inglese prevista)  
 > Licenza: EUPL v1.2
 
@@ -117,7 +117,7 @@ AsmWorkbench/
 │   ├── TabBar.asm          ← Tab bar custom owner-draw              ✅ COMPLETATO
 │   ├── DeInitIde.asm       ← Pulizia risorse (WM_DESTROY)          [futuro]
 │   ├── Editor.asm          ← Wrapper RichEdit 4.1                  ✅ COMPLETATO
-│   ├── Syntax.asm          ← Syntax highlighting + validazione      [futuro]
+│   ├── Syntax.asm          ← Syntax highlighting + validazione      ✅ COMPLETATO
 │   ├── IndentGuide.asm     ← Linee guida indentazione blocchi       [futuro]
 │   ├── Search.asm          ← Ricerca file corrente e progetto       [futuro]
 │   ├── Toolbar.asm         ← Toolbar icone sotto il menu            [futuro]
@@ -213,11 +213,18 @@ AsmWorkbench/
 - `Editor_Resize` — ridimensiona il RichEdit attivo
 - Variabili `g_nClientW` e `g_nClientH` sempre aggiornate da `WM_SIZE`
 
-### `syntax.asm` — Syntax highlighting + validazione
-- **Passaggio 1 — Colorazione**: colora i token riconosciuti con i colori del tema
-- **Passaggio 2 — Validazione**: applica sottolineatura ondulata rossa ai token non riconosciuti
-- Usa `CHARFORMAT2` di RichEdit 4.1 per entrambi i passaggi
-- Opera solo sul paragrafo corrente per mantenere la reattività
+### `Syntax.asm` — Syntax highlighting ✅
+- `Syntax_HighlightLine` — colora una singola riga, salva/ripristina cursore, usa flag anti-rientro `g_bHighlighting`
+- `Syntax_SetColor` — applica `CHARFORMAT2` a un range tramite `EM_EXSETSEL` + `EM_SETCHARFORMAT`
+- `Syntax_HighlightComment` — colora tutto dopo `;` fino a fine riga
+- `Syntax_HighlightStrings` — colora testo tra `"..."` (apice singolo da aggiungere)
+- `Syntax_HighlightNumbers` — colora costanti decimali, esadecimali (`0FFh`), binarie (`1010b`)
+- `Syntax_HighlightDotDirectives` — gestisce direttive con punto (`.386`, `.IF`, `.DATA` ecc.) come caso speciale prima delle keyword
+- `Syntax_HighlightKeywords` — colora mnemonici, registri e direttive senza punto
+- `Syntax_IsRegister` / `Syntax_IsMnemonic` / `Syntax_IsDirective` — lookup nelle liste con `add edi, 16` (entry a larghezza fissa 16 byte)
+- `Editor_RehighlightAll` — ricolora tutte le righe, usato al cambio tab e dopo paste
+- Debounce digitazione: **TODO** — timer 200ms per evitare flickering durante la digitazione
+- Liste keyword in `constants.inc`: `szRegisters`, `szMnemonics`, `szDirectives` (entry 16 byte fisse)
 
 ### `indentguide.asm` — Linee guida indentazione *(nuovo)*
 - Disegna linee verticali tratteggiate sottili che collegano blocchi apertura/chiusura
@@ -956,7 +963,7 @@ NomeModulo_NomeProcedura endp
 | 4 | `Editor.asm` | RichEdit 4.1 embedded con gestione resize | ✅ |
 | 5 | `FileMgr.asm` | New / Open / Save / Save As / Save All | ✅ |
 | 6 | `Theme.asm` + `theme.inc` | Sistema temi Light / Dark / Custom | ✅ |
-| 7 | `Syntax.asm` | Highlighting + sottolineatura ondulata | ⬜ |
+| 7 | `Syntax.asm` | Highlighting + sottolineatura ondulata | ✅ |
 | 8 | `IndentGuide.asm` | Linee guida indentazione blocchi | ⬜ |
 | 9 | `Toolbar.asm` | Toolbar icone con azioni principali | ⬜ |
 | 10 | `Search.asm` | Ricerca e sostituzione file/progetto | ⬜ |
@@ -997,4 +1004,4 @@ Testo completo: [https://eupl.eu/1.2/it/](https://eupl.eu/1.2/it/)
 
 ---
 
-*Documento aggiornato: 2026 — AsmWorkbench è in sviluppo attivo — Step 1✅ 2✅ 3✅ 4✅ 5✅ 6✅*
+*Documento aggiornato: 2026 — AsmWorkbench è in sviluppo attivo — Step 1✅ 2✅ 3✅ 4✅ 5✅ 6✅ 7✅*

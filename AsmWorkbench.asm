@@ -43,6 +43,8 @@ include src\TabBar.asm			; funzioni riguardanti la Tab Bar
 include src\Editor.asm			; funzioni riguardanti l'editor di testo
 include	src\FileMgr.asm			; funzioni riguardati la gestione dei file
 include src\Theme.asm			; funzioni riguardanti la gestione dei temi
+include src\Syntax.asm			; funzioni riguardanti la visualizzazione colori sintassi del testo
+
 
 ; qui indichiamo la fine del file con il punto d'ingresso del programma
 end	main

@@ -83,8 +83,8 @@ Theme_LoadDark proc
     mov  g_Theme.clrDirective,     00C0C586h   	; viola chiaro
     mov  g_Theme.clrComment,       0055996Ah   	; verde desaturato
     mov  g_Theme.clrString,        007892CEh   	; arancione salmone
-    mov  g_Theme.clrNumber,        00A8CEB5h   	; verde chiaro
-    mov  g_Theme.clrOperator,      00D4D4D4h   	; grigio chiaro
+    mov  g_Theme.clrNumber,        000000FFh   	; rosso acceso
+    mov  g_Theme.clrOperator,      00FF0000h   	; grigio chiaro
     mov  g_Theme.clrLabel,         00DCDCAAh   	; giallo chiaro
 
     ; Validazione e guide

@@ -126,7 +126,6 @@ Editor_ActivateTab_HideLoop:
 	jz	Editor_Activate_HideNext
 	
 	invoke	ShowWindow, edx, SW_HIDE
-	invoke  Theme_ApplyToEditor, g_hEditor
 
 Editor_Activate_HideNext:
 	inc	i
@@ -155,6 +154,7 @@ Editor_Activate_Show:
 	; mostra e porta il focus
 	invoke	ShowWindow, hRE, SW_SHOW
 	invoke	SetFocus, hRE
+	invoke	Editor_RehighlightAll, hRE
 
 Editor_Activate_End:
 	ret
@@ -186,3 +186,35 @@ LOCAL nH:DWORD
 Editor_Resize_End:
     ret
 Editor_Resize endp
+
+;
+; Editor_RehighlightAll
+;
+; Riapplica systex highlighting a tutte le righe
+;
+; In:	hRE = handle RichEdit
+;
+Editor_RehighlightAll proc hRE:DWORD
+LOCAL	nLines:DWORD
+LOCAL	nCurrLine:DWORD
+
+	invoke 	SendMessage, hRE, EM_GETLINECOUNT, 0, 0
+	mov	nLines, eax
+	mov	nCurrLine, 0
+
+	mov	g_bHighlighting, 1
+
+Editor_Rehighlight_Loop:
+	mov	eax, nCurrLine
+	cmp	eax, nLines
+	jge	Editor_Rehighlight_Done
+
+	invoke	Syntax_HighlightLine, hRE, nCurrLine
+	inc	nCurrLine
+	jmp	Editor_Rehighlight_Loop
+
+Editor_Rehighlight_Done:
+	mov	g_bHighlighting, 0
+	ret
+
+Editor_RehighlightAll endp

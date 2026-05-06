@@ -52,7 +52,7 @@ L'obiettivo non è "fare come Visual Studio" — è offrire **lo stesso livello 
 * Editor di testo basato su RichEdit con gestione multi-file a **tab custom**
 * Indicatore visivo di file modificato (`●`) e pulsante di chiusura (`×`) per ogni tab
 * Chiusura con click centrale del mouse
-* Numbering delle righe
+* Numerazione delle righe
 * Salvataggio automatico e ripristino sessione
 
 ### Syntax Highlighting
@@ -132,9 +132,9 @@ inc/
 ┌──────────────────────────────────────────────────────────┐
 │  File  Modifica  Visualizza  Progetto  Build  Strumenti  │
 ├──────────────────────────────────────────────────────────┤
-│  \[Nuovo]\[Apri]\[Salva]  |  \[Build]\[Esegui]\[Stop]          │
+│  \[Nuovo]\[Apri]\[Salva]  |  \[Build]\[Esegui]\[Stop]    │
 ├──────────────────────────────────────────────────────────┤
-│  \[main.asm]  \[utils.asm ●]  \[resource.rc]  \[+]           │
+│  \[main.asm]  \[utils.asm ●]  \[resource.rc]  \[+]       │
 ├──────────────────┬───────────────────────────────────────┤
 │  Project Tree    │   Editor                              │
 │                  │                                       │
@@ -159,11 +159,11 @@ inc/
 |:-:|-|-|:-:|
 |1|`AsmWorkbench.asm` + `WinMain.asm` + `RegisterWindowMainClass.asm`|Finestra principale funzionante|✅|
 |2|`InitIde.asm` — StatusBar|StatusBar con 3 sezioni e testi|✅|
-|3|`TabBar.asm`|Tab bar custom owner-draw con ● e ×|🔄|
-|4|`Editor.asm`|RichEdit 4.1 embedded con gestione resize|⬜|
-|5|`FileMgr.asm`|New / Open / Save / Save As|⬜|
-|6|`Theme.asm`|Sistema temi Light / Dark / Custom|⬜|
-|7|`Syntax.asm`|Syntax highlighting + sottolineatura ondulata|⬜|
+|3|`TabBar.asm`|Tab bar custom owner-draw con ● e ×|✅|
+|4|`Editor.asm`|RichEdit 4.1 embedded con gestione resize|✅|
+|5|`FileMgr.asm`|New / Open / Save / Save As|✅|
+|6|`Theme.asm`|Sistema temi Light / Dark / Custom|✅|
+|7|`Syntax.asm`|Syntax highlighting + sottolineatura ondulata|🔄|
 |8|`IndentGuide.asm`|Linee guida indentazione blocchi|⬜|
 |9|`Toolbar.asm`|Toolbar icone con azioni principali|⬜|
 |10|`Search.asm`|Ricerca e sostituzione file/progetto|⬜|
