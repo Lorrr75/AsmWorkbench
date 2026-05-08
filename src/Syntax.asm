@@ -152,44 +152,61 @@ Syntax_HighlightComment endp
 ; Colora testo tra le "..."
 ;
 Syntax_HighlightStrings proc hRE:DWORD, pszLine:DWORD, nLineStart:DWORD, nLineLen:DWORD
-LOCAL i:DWORD
-LOCAL nStrStart:DWORD
-LOCAL bInString:DWORD
+LOCAL 	i:DWORD
+LOCAL 	nStrStart:DWORD
+LOCAL 	bInString:DWORD
+LOCAL	chOpen:BYTE
 	
 	mov	i, 0
 	mov	bInString, 0
-	mov	esi, pszLine
+	mov	chOpen, 0
 
 Syntax_Strings_Loop:
 	mov	eax, i
 	cmp	eax, nLineLen
 	jge	Syntax_Strings_Done
 
-	lodsb
+	mov	esi, pszLine
+	add	esi, i
+	mov	al, [esi]
 
 	; salta se siamo in un commento
 	cmp	al, ';'
-	je	Syntax_Strings_Next
-	cmp	al, '"'
-	jne	Syntax_Strings_Next
+	je	Syntax_Strings_Done
 	
-	cmp	bInString, 0
-	jne	Syntax_Strings_End
+	; siamo già dentro ad una stringa?
+	cmp	bInString, 1
+	je	Syntax_Strings_InString
+	jmp	Syntax_Strings_CheckOpen
 
-	; inizio stringa
-	mov	eax, nLineStart
-	add	eax, i
-	mov	nStrStart, eax
-	mov	bInString, 1
-	jmp	Syntax_Strings_Next
+Syntax_Strings_InString:
+	; controlla se è il carattere di chiusura
+	cmp	al, chOpen
+	jne	Syntax_Strings_Next
 
-Syntax_Strings_End:
 	; fine stringa - colora l'intervallo
 	mov	bInString, 0
 	mov	eax, nLineStart
 	add	eax, i
-	inc	eax			; include la virgoletta chiusa
+	inc	eax			; include carattered ichiusura
 	invoke	Syntax_SetColor, hRE, nStrStart, eax, g_Theme.clrString
+	jmp	Syntax_Strings_Next
+
+Syntax_Strings_CheckOpen:
+	; controlla apertura co " o '
+	cmp	al, '"'
+	je	Syntax_Strings_Open
+	cmp	al, 39			; apice singolo '
+	je	Syntax_Strings_Open
+	jmp	Syntax_Strings_Next
+
+Syntax_Strings_Open:
+	; inizio stringa - salva posizione e carattere aperto
+	mov	bInString, 1
+	mov	chOpen, al
+	mov	eax, nLineStart
+	add	eax, i
+	mov	nStrStart, eax
 
 Syntax_Strings_Next:
 	inc	i
